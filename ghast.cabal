@@ -47,6 +47,7 @@ executable ghast
         base ^>=4.14.1.0
       , aeson
       , bytestring
+      , case-insensitive
       , ghast
       , http-conduit
     hs-source-dirs:   app
