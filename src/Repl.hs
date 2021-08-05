@@ -1,10 +1,11 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Repl where
 
 import Control.Monad.Catch
-import Data.ByteString.Char8 as B8
+import qualified Data.ByteString.Char8 as B8
 import Data.Aeson
+import Data.Aeson.Casing (snakeCase)
+import Data.Text (Text)
+import GHC.Generics
 import Network.HTTP.Simple
 import System.Environment
 
@@ -37,3 +38,21 @@ authorizedRequest req = do
   case (userid, passwd) of
     (Just u, Just p) -> pure $ authenticateWithBasic u p $ setUserAgent req
     _ -> undefined
+
+aesonOptions :: Maybe String -> Options
+aesonOptions ms = defaultOptions { fieldLabelModifier = snakeCase . drop len }
+  where len = maybe 0 length ms
+
+data UserDataProj = UserDataProj 
+  { udpId :: Integer
+  , udpName :: Text
+  , udpNodeId :: Text
+  }
+  deriving stock (Generic, Show, Eq)
+
+instance FromJSON UserDataProj where
+  parseJSON = genericParseJSON $ aesonOptions $ Just "udp"
+  -- parseJSON = withObject "UserDataProj" $ \v -> UserDataProj
+  --   <$> v .: "id"
+  --   <*> v .: "name"
+  --   <*> v .: "node_id"
