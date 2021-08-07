@@ -36,6 +36,7 @@ library
       , aeson
       , aeson-casing
       , bytestring
+      , case-insensitive
       , exceptions
       , http-conduit
       , text
@@ -71,6 +72,7 @@ test-suite ghast-test
       , exceptions
       , hspec
       , http-conduit
+      , http-types
     build-tool-depends:
         hspec-discover:hspec-discover
     default-language: Haskell2010
