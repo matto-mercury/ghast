@@ -2,6 +2,7 @@ module Repl where
 
 import Control.Monad.Catch
 import qualified Data.ByteString.Char8 as B8
+import Data.ByteString.Base64 as B64
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Text (Text)
@@ -22,7 +23,7 @@ httpValue = httpJSON
 
 authenticateWithBasic :: String -> String -> Request -> Request
 authenticateWithBasic user pass =
-  addRequestHeader "Authorization" $ B8.pack (user <> ":" <> pass)
+  addRequestHeader "Authorization" $ B8.pack "Basic " <> B64.encode (B8.pack $ user <> ":" <> pass)
 
 getEnvironmentUserid :: IO (Maybe String)
 getEnvironmentUserid = lookupEnv "GITHUB_USER"

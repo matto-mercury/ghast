@@ -10,9 +10,9 @@ main :: IO ()
 main = do
   baseReq <- getUserData
   authedReq <- authorizedRequest baseReq
-  resp <- httpBS authedReq
+  resp <- httpJSON @_ @UserDataProj authedReq
   let body = getResponseBody resp
-  B8.putStrLn body
+  print body
   let headers = getResponseHeaders resp
   let headerStr = foldMap (\(k,v) -> (original k) <> v <> (B8.pack "\n")) headers
   B8.putStrLn headerStr

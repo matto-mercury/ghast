@@ -29,12 +29,14 @@ library
         OverloadedStrings
       , DeriveGeneric
       , DerivingStrategies
+      , TypeApplications
     exposed-modules:
         Repl
     build-depends:
         base ^>=4.14.1.0
       , aeson
       , aeson-casing
+      , base64-bytestring
       , bytestring
       , case-insensitive
       , exceptions
@@ -44,6 +46,12 @@ library
 
 executable ghast
     main-is:          Main.hs
+
+    default-extensions:
+        OverloadedStrings
+      , DeriveGeneric
+      , DerivingStrategies
+      , TypeApplications
 
     -- Modules included in this executable, other than Main.
     other-modules:

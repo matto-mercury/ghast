@@ -15,7 +15,13 @@ spec = do
       value <- do head . getRequestHeader authName
        . authenticateWithBasic userid passwd
        <$> spuriousRequest
-      "Basic " `shouldBe` take 6 (B8.unpack value)
+      take 6 (B8.unpack value) `shouldBe` "Basic "
+
+    it "appends base-64 encoding of 'user:pass'" $ do
+      value <- do head . getRequestHeader authName
+        . authenticateWithBasic userid passwd
+        <$> spuriousRequest
+      drop 6 (B8.unpack value) `shouldBe` "dXNlcjpwYXNz"
 
 spuriousRequest :: MonadThrow m => m Request
 spuriousRequest = parseRequest "https://foo.bar"
