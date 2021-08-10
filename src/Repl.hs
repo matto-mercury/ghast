@@ -5,6 +5,7 @@ import qualified Data.ByteString.Char8 as B8
 import Data.ByteString.Base64 as B64
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
+import Data.List (intercalate)
 import Data.Text (Text)
 import GHC.Generics
 import Network.HTTP.Simple
@@ -39,6 +40,27 @@ authorizedRequest req = do
   case (userid, passwd) of
     (Just u, Just p) -> pure $ authenticateWithBasic u p $ setUserAgent req
     _ -> undefined
+
+buildGithubRequest :: String -> [Parameter] -> IO Request
+buildGithubRequest path params = do
+  uaReq <- setUserAgent <$> parseRequest ("https://api.github.com" <> path <> writeParams params)
+  authorizedRequest uaReq
+
+githubListRuns = "/repos/MercuryTechnologies/mercury-web-backend/actions/runs"
+
+data Parameter = Param String String
+
+instance Show Parameter where
+  -- probably want some URI-encoding here eventually
+  show (Param k v) = k <> "=" <> v
+
+writeParams :: [Parameter] -> String
+writeParams [] = ""
+writeParams ps = "?" <> pstr
+  where pstr = intercalate "&" (map show ps)
+
+perPage :: Integer -> Parameter
+perPage n = Param "per_page" (show n)
 
 aesonOptions :: Maybe String -> Options
 aesonOptions ms = defaultOptions { fieldLabelModifier = snakeCase . drop len }
