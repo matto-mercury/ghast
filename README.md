@@ -19,8 +19,12 @@ GitHub Actions STatus CLI tool
   - repo (e.g. mercury-web-backend)
   - current branch (e.g. matto/rul-79)
 - URL-encode parameter values
+- get latest run, jobs in current branch
 - list failed jobs
 - download logs from failed jobs
 
 ## Longer term
 - oauth2 support
+- command-line options
+  - check a specified branch
+  - check a specified run / job
