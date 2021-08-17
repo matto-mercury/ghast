@@ -12,8 +12,6 @@ GitHub Actions STatus CLI tool
 - URL-encode parameter values
 
 ## Next up
-- get latest run, jobs in current branch
-- list failed jobs
 - ReaderT for credentials
 
 ## Medium term
@@ -21,6 +19,8 @@ GitHub Actions STatus CLI tool
   - owner (e.g. MercuryTechnologies)
   - repo (e.g. mercury-web-backend)
   - current branch (e.g. matto/rul-79)
+- get latest run, jobs in current branch
+- list failed jobs
 - download logs from failed jobs
 - figure out how to work nicely with String and Text
  - similar for datetimes
