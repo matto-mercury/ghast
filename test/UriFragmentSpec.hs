@@ -1,12 +1,8 @@
 module UriFragmentSpec where
 
-import Control.Monad.Catch
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.CaseInsensitive as CI
-import Network.HTTP.Simple
-import Network.HTTP.Types.Header
-import Repl
 import Test.Hspec
+
+import UriFragment
 
 spec :: Spec
 spec = do

@@ -5,7 +5,7 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.CaseInsensitive as CI
 import Network.HTTP.Simple
 import Network.HTTP.Types.Header
-import Repl
+import qualified Repl as R
 import Test.Hspec
 
 spec :: Spec
@@ -13,13 +13,13 @@ spec = do
   describe "Basic auth header generator" $ do
     it "generates a value string that starts with 'Basic '" $ do
       value <- do head . getRequestHeader authName
-       . authenticateWithBasic userid passwd
+       . R.authenticateWithBasic userid passwd
        <$> spuriousRequest
       take 6 (B8.unpack value) `shouldBe` "Basic "
 
     it "appends base-64 encoding of 'user:pass'" $ do
       value <- do head . getRequestHeader authName
-        . authenticateWithBasic userid passwd
+        . R.authenticateWithBasic userid passwd
         <$> spuriousRequest
       drop 6 (B8.unpack value) `shouldBe` "dXNlcjpwYXNz"
 

@@ -8,11 +8,5 @@ import qualified Data.ByteString.Char8 as B8
 
 main :: IO ()
 main = do
-  baseReq <- getUserData
-  authedReq <- authorizedRequest baseReq
-  resp <- httpJSON @_ @UserDataProj authedReq
-  let body = getResponseBody resp
-  print body
-  let headers = getResponseHeaders resp
-  let headerStr = foldMap (\(k,v) -> (original k) <> v <> (B8.pack "\n")) headers
-  B8.putStrLn headerStr
+  jobs <- runAppEnv (doWorkSon "matto/rul-79")
+  print jobs
