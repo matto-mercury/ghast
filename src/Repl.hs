@@ -9,9 +9,11 @@ import qualified Data.ByteString.Char8 as B8
 import Data.ByteString.Base64 as B64
 import qualified Data.Aeson as J
 import Data.Aeson.Casing (snakeCase)
-import Data.Text (Text)
+import Data.Text (Text(..), pack, unpack)
+import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics
 import Network.HTTP.Simple
+import Shelly
 import System.Environment
 
 import UriFragment
@@ -24,9 +26,12 @@ setUserAgent bareReq =
   let (name, val) = ("User-Agent", "ghast-0.1.0.0") in
   addRequestHeader name val bareReq
 
-authenticateWithBasic :: String -> String -> Request -> Request
+authenticateWithBasic :: Text -> Text -> Request -> Request
 authenticateWithBasic user pass =
-  addRequestHeader "Authorization" $ B8.pack "Basic " <> B64.encode (B8.pack $ user <> ":" <> pass)
+  let u = encodeUtf8 user
+      p = encodeUtf8 pass
+  in
+  addRequestHeader "Authorization" $ B8.pack "Basic " <> B64.encode (u <> ":" <> p)
 
 authorizedRequest :: Monad m => Request -> AppT m Request
 authorizedRequest req = do
@@ -34,16 +39,16 @@ authorizedRequest req = do
 
   pure $ authenticateWithBasic (userId env) (passwd env) req
 
-buildGithubRequest :: MonadThrow m => String -> [Parameter] -> AppT m Request
+buildGithubRequest :: MonadThrow m => Text -> [Parameter] -> AppT m Request
 buildGithubRequest path params = do
-  uaReq <- setUserAgent <$> parseRequest ("https://api.github.com" <> path <> render params)
+  uaReq <- setUserAgent <$> parseRequest (unpack $ "https://api.github.com" <> path <> render params)
   authorizedRequest uaReq
 
 githubListRuns = "/repos/MercuryTechnologies/mercury-web-backend/actions/runs"
 perPage :: Integer -> Parameter
-perPage n = Param "per_page" (show n)
+perPage n = Param "per_page" (pack $ show n)
 
-branch :: String -> Parameter
+branch :: Text -> Parameter
 branch = Param "branch"
 
 aesonOptions :: Maybe String -> J.Options
@@ -75,11 +80,11 @@ instance J.FromJSON ListRuns where
 
 data CommitRunProj = CommitRunProj
   { crpId :: Integer
-  , crpHeadBranch :: String
-  , crpStatus :: String
-  , crpConclusion :: String
-  , crpJobsUrl :: String
-  , crpLogsUrl :: String -- sends back a zipfile, apparently, probably not what I want
+  , crpHeadBranch :: Text
+  , crpStatus :: Text
+  , crpConclusion :: Text
+  , crpJobsUrl :: Text
+  , crpLogsUrl :: Text -- sends back a zipfile, apparently, probably not what I want
   }
   deriving stock (Generic, Show, Eq)
 
@@ -88,12 +93,12 @@ instance J.FromJSON CommitRunProj where
 
 runJobsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
 runJobsRequest CommitRunProj {crpJobsUrl} params = do -- NamedFieldPuns instead of {..}
-  uaReq <- setUserAgent <$> parseRequest (crpJobsUrl <> render params)
+  uaReq <- setUserAgent <$> parseRequest (unpack $ crpJobsUrl <> render params)
   authorizedRequest uaReq
 
 runLogsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
 runLogsRequest CommitRunProj {crpLogsUrl} params = do
-  uaReq <- setUserAgent <$> parseRequest (crpLogsUrl <> render params)
+  uaReq <- setUserAgent <$> parseRequest (unpack $ crpLogsUrl <> render params)
   authorizedRequest uaReq
 
 data ListJobs = ListJobs
@@ -163,7 +168,7 @@ instance J.FromJSON JobConclusion where
   parseJSON = J.genericParseJSON $ J.defaultOptions {J.constructorTagModifier = snakeCase}
 
 -- jeez
-doWorkSon :: (MonadThrow m, MonadIO m) => String -> AppT m [JobsProj]
+doWorkSon :: (MonadThrow m, MonadIO m) => Text -> AppT m [JobsProj]
 doWorkSon br = do
   runReq <- buildGithubRequest githubListRuns [perPage 1, branch br]
   runResp <- httpJSON @_ @ListRuns runReq
@@ -178,8 +183,8 @@ doWorkSon br = do
   pure $ filter (\j -> (jpStatus j == Completed) && (jpConclusion j /= Success)) jobs 
 
 data Env = Env
-  { userId :: String
-  , passwd :: String
+  { userId :: Text
+  , passwd :: Text
   }
   deriving Show
 
@@ -198,7 +203,7 @@ readEnvCreds = do
   mPasswd <- getEnvironmentPassword
 
   case (mUserid, mPasswd) of
-    (Just u, Just p) -> pure Env { userId = u , passwd = p }
+    (Just u, Just p) -> pure Env { userId = pack u , passwd = pack p }
     (_, _) -> error "oops"
 
 runAppEnv :: AppT IO a -> IO a

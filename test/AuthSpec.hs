@@ -3,6 +3,7 @@ module AuthSpec where
 import Control.Monad.Catch
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.CaseInsensitive as CI
+import Data.Text (Text (..))
 import Network.HTTP.Simple
 import Network.HTTP.Types.Header
 import qualified Repl as R
@@ -26,10 +27,10 @@ spec = do
 spuriousRequest :: MonadThrow m => m Request
 spuriousRequest = parseRequest "https://foo.bar"
 
-userid :: String
+userid :: Text
 userid = "user"
 
-passwd :: String
+passwd :: Text
 passwd = "pass"
 
 authName :: HeaderName

@@ -1,5 +1,6 @@
 module UriFragmentSpec where
 
+import Data.Text (Text (..))
 import Test.Hspec
 
 import UriFragment
@@ -8,13 +9,13 @@ spec :: Spec
 spec = do
   describe "Basic percent-encoding on rendered URI fragments" $ do
     it "does nothing when input doesn't need encoding" $
-      render "hello" `shouldBe` "hello"
+      render @Text "hello" `shouldBe` "hello"
 
     it "percent-encodes spaces and ascii punctuation" $
-      render "hi& there" `shouldBe` "hi%26%20there"
+      render @Text "hi& there" `shouldBe` "hi%26%20there"
 
     it "percent-encodes multibyte characters" $
-      render "hi günter" `shouldBe` "hi%20g%C3%BCnter"
+      render @Text "hi günter" `shouldBe` "hi%20g%C3%BCnter"
 
   describe "Key-value parameters get rendered with a = between them" $ do
     it "does what it says on the tin" $

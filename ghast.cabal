@@ -46,6 +46,8 @@ library
       , exceptions
       , http-conduit
       , mtl
+      , optparse-applicative
+      , shelly
       , text
       , uri-encode
     default-language: Haskell2010
@@ -80,6 +82,7 @@ test-suite ghast-test
     main-is: Spec.hs
     default-extensions:
         FlexibleInstances
+      , OverloadedStrings
       , TypeApplications
 
     build-depends:
@@ -91,6 +94,7 @@ test-suite ghast-test
       , hspec
       , http-conduit
       , http-types
+      , text
     build-tool-depends:
         hspec-discover:hspec-discover
     default-language: Haskell2010

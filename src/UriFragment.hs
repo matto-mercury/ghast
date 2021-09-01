@@ -1,23 +1,22 @@
 module UriFragment where
 
-import Data.List (intercalate)
+import Data.Text (Text (..), intercalate, pack)
 import qualified Network.URI.Encode as UE
 
-data Parameter = Param String String
+data Parameter = Param Text Text
   deriving stock (Show, Eq)
 
 class UriFragment s where
-  render :: s -> String
+  render :: s -> Text
 
-instance UriFragment String where
-  -- probably want some URI-encoding here eventually
-  render = UE.encode
+instance UriFragment Text where
+  render = UE.encodeText
 
 instance UriFragment Parameter where
-  render (Param k v) = render k <> "=" <> render v
+  render (Param k v) = render k <> pack "=" <> render v
 
 instance UriFragment [Parameter] where
-  render [] = ""
-  render ps = "?" <> pstr
+  render [] = pack ""
+  render ps = pack "?" <> pstr
     where pstr = intercalate "&" (map render ps)
 
