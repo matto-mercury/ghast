@@ -8,5 +8,5 @@ import qualified Data.ByteString.Char8 as B8
 
 main :: IO ()
 main = do
-  jobs <- runAppEnv (doWorkSon "matto/rul-79")
+  jobs <- runAppEnv doWorkSon
   print jobs

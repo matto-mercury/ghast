@@ -40,6 +40,7 @@ library
         base ^>=4.14.1.0
       , aeson
       , aeson-casing
+      , attoparsec
       , base64-bytestring
       , bytestring
       , case-insensitive

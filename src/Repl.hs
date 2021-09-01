@@ -5,11 +5,13 @@ module Repl where
 
 import Control.Monad.Catch
 import Control.Monad.Reader
+import qualified Data.Aeson as J
+import Data.Attoparsec.Text
 import qualified Data.ByteString.Char8 as B8
 import Data.ByteString.Base64 as B64
-import qualified Data.Aeson as J
 import Data.Aeson.Casing (snakeCase)
-import Data.Text (Text(..), pack, unpack)
+import Data.Text (Text(..), pack, unpack, isSuffixOf)
+import qualified Data.Text as T (lines) 
 import Data.Text.Encoding (encodeUtf8)
 import GHC.Generics
 import Network.HTTP.Simple
@@ -44,7 +46,16 @@ buildGithubRequest path params = do
   uaReq <- setUserAgent <$> parseRequest (unpack $ "https://api.github.com" <> path <> render params)
   authorizedRequest uaReq
 
-githubListRuns = "/repos/MercuryTechnologies/mercury-web-backend/actions/runs"
+githubListRuns :: GitRemote -> Text
+githubListRuns GitRemote {..} = 
+  mconcat 
+    [ "/repos/"
+    , owner
+    , "/"
+    , repo
+    , "/actions/runs"
+    ]
+
 perPage :: Integer -> Parameter
 perPage n = Param "per_page" (pack $ show n)
 
@@ -168,9 +179,21 @@ instance J.FromJSON JobConclusion where
   parseJSON = J.genericParseJSON $ J.defaultOptions {J.constructorTagModifier = snakeCase}
 
 -- jeez
-doWorkSon :: (MonadThrow m, MonadIO m) => Text -> AppT m [JobsProj]
-doWorkSon br = do
-  runReq <- buildGithubRequest githubListRuns [perPage 1, branch br]
+doWorkSon :: (MonadThrow m, MonadIO m) => AppT m [JobsProj]
+doWorkSon = do
+  remote <- gitRemote <$> ask
+  br <- gitBranch <$> ask
+
+  liftIO . putStrLn . unpack $ mconcat
+    [ "remote: "
+    , owner remote
+    , "/"
+    , repo remote
+    , "\nbranch: "
+    , br
+    ]
+
+  runReq <- buildGithubRequest (githubListRuns remote) [perPage 1, branch br]
   runResp <- httpJSON @_ @ListRuns runReq
 
   let runs = lrWorkflowRuns $ getResponseBody runResp
@@ -185,6 +208,8 @@ doWorkSon br = do
 data Env = Env
   { userId :: Text
   , passwd :: Text
+  , gitBranch :: Text
+  , gitRemote :: GitRemote
   }
   deriving Show
 
@@ -197,14 +222,53 @@ getEnvironmentUserid = lookupEnv "GITHUB_USER"
 getEnvironmentPassword :: IO (Maybe String)
 getEnvironmentPassword = lookupEnv "GITHUB_KEY"
 
+data GitRemote = GitRemote
+  { owner :: Text
+  , repo :: Text
+  }
+  deriving Show
+
+-- given the output of `git remote -v`, finds the first line with "(push)" at
+-- the end. first version is unsafe on "none of them"
+findPushRemote :: Text -> Text
+findPushRemote remotesText =
+  let remotes = T.lines remotesText
+      pushes = filter (isSuffixOf "(push)") remotes
+   in
+      head pushes
+
+parsePushRemote :: Parser GitRemote
+parsePushRemote = do
+  string "origin\tgit@github.com:"
+  owner <- takeTill (== '/')
+  char '/'
+  repo <- takeTill (== '.')
+  pure GitRemote { owner = owner, repo = repo }
+
+parseBranch :: Parser Text
+parseBranch = "refs/heads/" *> takeText
+
 readEnvCreds :: IO Env
 readEnvCreds = do
   mUserid <- getEnvironmentUserid
   mPasswd <- getEnvironmentPassword
 
-  case (mUserid, mPasswd) of
-    (Just u, Just p) -> pure Env { userId = pack u , passwd = pack p }
-    (_, _) -> error "oops"
+  (branch, remote) <- shelly $ silently $ do
+    b <- run "git" ["symbolic-ref", "--quiet", "HEAD"]
+    r <- findPushRemote <$> run "git" ["remote", "-v"]
+    pure (b, r)
+
+  let eBranch = parseOnly parseBranch branch
+  let eRemote = parseOnly parsePushRemote remote
+
+  case (mUserid, mPasswd, eBranch, eRemote) of
+    (Just u, Just p, Right b, Right r) -> pure Env 
+      { userId = pack u
+      , passwd = pack p
+      , gitBranch = b
+      , gitRemote = r
+      }
+    (_, _, _, _) -> error "oops"
 
 runAppEnv :: AppT IO a -> IO a
 runAppEnv app = do
