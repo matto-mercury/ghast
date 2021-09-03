@@ -35,16 +35,23 @@ authenticateWithBasic user pass =
   in
   addRequestHeader "Authorization" $ B8.pack "Basic " <> B64.encode (u <> ":" <> p)
 
-authorizedRequest :: Monad m => Request -> AppT m Request
-authorizedRequest req = do
-  env <- ask
+newtype TypedRequest response =
+  TypedRequest { unTypedRequest :: Request }
 
-  pure $ authenticateWithBasic (userId env) (passwd env) req
+runTypedRequest :: MonadIO io => J.FromJSON a => TypedRequest a -> io (Response a)
+runTypedRequest req = do
+  httpJSON (unTypedRequest req)
 
-buildGithubRequest :: MonadThrow m => Text -> [Parameter] -> AppT m Request
-buildGithubRequest path params = do
+runTypedRequestM :: MonadIO m => J.FromJSON a => AppT m (TypedRequest a) -> AppT m (Response a)
+runTypedRequestM req = runTypedRequest =<< req
+
+buildGithubRequest :: MonadThrow m => (GitRemote -> Text) -> [Parameter] -> AppT m Request
+buildGithubRequest pathFunc params = do
+  (u, p) <- asks getCreds
+  remote <- asks gitRemote
+  let path = pathFunc remote
   uaReq <- setUserAgent <$> parseRequest (unpack $ "https://api.github.com" <> path <> render params)
-  authorizedRequest uaReq
+  pure $ authenticateWithBasic u p uaReq
 
 githubListRuns :: GitRemote -> Text
 githubListRuns GitRemote {..} = 
@@ -55,6 +62,10 @@ githubListRuns GitRemote {..} =
     , repo
     , "/actions/runs"
     ]
+
+buildListRunsReq :: MonadThrow m => [Parameter] -> AppT m (TypedRequest ListRuns)
+buildListRunsReq params = 
+  TypedRequest @ListRuns <$> buildGithubRequest githubListRuns params
 
 perPage :: Integer -> Parameter
 perPage n = Param "per_page" (pack $ show n)
@@ -102,15 +113,19 @@ data CommitRunProj = CommitRunProj
 instance J.FromJSON CommitRunProj where
   parseJSON = J.genericParseJSON $ aesonOptions $ Just "crp"
 
-runJobsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
-runJobsRequest CommitRunProj {crpJobsUrl} params = do -- NamedFieldPuns instead of {..}
+buildRunJobsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m (TypedRequest ListJobs)
+buildRunJobsRequest CommitRunProj {crpJobsUrl} params = do -- NamedFieldPuns instead of {..}
+  (u, p) <- asks getCreds
   uaReq <- setUserAgent <$> parseRequest (unpack $ crpJobsUrl <> render params)
-  authorizedRequest uaReq
+  pure $ TypedRequest @ListJobs $ authenticateWithBasic u p uaReq
 
-runLogsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
-runLogsRequest CommitRunProj {crpLogsUrl} params = do
-  uaReq <- setUserAgent <$> parseRequest (unpack $ crpLogsUrl <> render params)
-  authorizedRequest uaReq
+
+
+-- buildRunLogsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
+-- runLogsRequest CommitRunProj {crpLogsUrl} params = do
+--   (u, p) <- asks getCreds
+--   uaReq <- setUserAgent <$> parseRequest (unpack $ crpLogsUrl <> render params)
+--   pure $ authenticateWithBasic u p uaReq
 
 data ListJobs = ListJobs
   { ljTotalCount :: Integer
@@ -181,8 +196,8 @@ instance J.FromJSON JobConclusion where
 -- jeez
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m [JobsProj]
 doWorkSon = do
-  remote <- gitRemote <$> ask
-  br <- gitBranch <$> ask
+  remote <- asks gitRemote
+  br <- asks gitBranch
 
   liftIO . putStrLn . unpack $ mconcat
     [ "remote: "
@@ -193,13 +208,14 @@ doWorkSon = do
     , br
     ]
 
-  runReq <- buildGithubRequest (githubListRuns remote) [perPage 1, branch br]
+  runReq <- buildGithubRequest githubListRuns [perPage 1, branch br]
   runResp <- httpJSON @_ @ListRuns runReq
 
   let runs = lrWorkflowRuns $ getResponseBody runResp
 
-  jobsReq <- runJobsRequest (head runs) []
-  jobsResp <- httpJSON @_ @ListJobs jobsReq
+  -- jobsReq <- buildRunJobsRequest (head runs) []
+  -- jobsResp <- runTypedRequest jobsReq
+  jobsResp <- runTypedRequestM $ buildRunJobsRequest (head runs) []
 
   let jobs = ljJobs $ getResponseBody jobsResp
 
@@ -212,6 +228,9 @@ data Env = Env
   , gitRemote :: GitRemote
   }
   deriving Show
+
+getCreds :: Env -> (Text, Text)
+getCreds env = (userId env, passwd env)
 
 newtype AppT m a = AppT { runAppT :: ReaderT Env m a }
   deriving newtype (MonadReader Env, Monad, Applicative, Functor, MonadIO, MonadThrow)
@@ -278,3 +297,29 @@ runAppEnv app = do
   --   AppT a -> case a of
   --     ReaderT ema -> ema env
 
+-- repl test framework
+-- depends on real creds in the env but brings in hardcoded git stuff
+
+readTestCreds :: IO Env
+readTestCreds = do
+  mUserid <- getEnvironmentUserid
+  mPasswd <- getEnvironmentPassword
+
+  case (mUserid, mPasswd) of
+    (Just u, Just p) -> pure Env
+      { userId = pack u
+      , passwd = pack p
+      , gitBranch = "matto/rul-88"
+      , gitRemote = testRemote
+      }
+
+testRemote :: GitRemote
+testRemote = GitRemote
+  { owner = "MercuryTechnologies"
+  , repo  = "mercury-web-backend"
+  }
+
+runFwk :: AppT IO a -> IO a
+runFwk app = do
+  env <- readTestCreds
+  runReaderT (runAppT app) env
