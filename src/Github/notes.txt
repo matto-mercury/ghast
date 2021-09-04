@@ -1,0 +1,15 @@
+runsR <- runFwk $ buildListRunsReq [perPage 3, branch "matto/rul-88"]
+runsResp <- runFwk $ runTypedRequest runsR
+runsList = getResponseBody runsResp
+runs = lrWorkflowRuns runsList
+failed = runs !! 2
+jobsR <- runFwk $ buildRunJobsRequest failed []
+jobsResp <- runTypedRequest jobsR
+jobs = ljJobs $ getResponseBody jobsResp
+failedJ = Prelude.filter (\j -> (jpConclusion j /= Success)) jobs
+failedBuild = Prelude.head failedJ
+logsReq <- runFwk $ buildJobLogsRequest failedBuild
+logsResp <- httpBS logsReq
+logsBody = getResponseBody logsResp
+logsText = decodeUtf8 logsBody
+logsLines = Data.Text.lines logsText
