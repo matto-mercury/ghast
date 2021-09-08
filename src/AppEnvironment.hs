@@ -1,6 +1,7 @@
 module AppEnvironment where
 
 import Control.Monad.Catch
+import Control.Monad.Except
 import Control.Monad.Reader
 import Data.Attoparsec.Text
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
@@ -8,8 +9,17 @@ import qualified Data.Text as T (lines)
 import Shelly
 import System.Environment
 
-newtype AppT m a = AppT { runAppT :: ReaderT Env m a }
-  deriving newtype (MonadReader Env, Monad, Applicative, Functor, MonadIO, MonadThrow)
+data StopCondition
+  = Expected Text
+  | Surprise Text
+  deriving stock (Show)
+
+newtype AppT m a = AppT { runAppT :: ReaderT Env (ExceptT StopCondition m) a }
+  deriving newtype
+   ( MonadReader Env
+   , MonadError StopCondition
+   , Monad, Applicative, Functor, MonadIO, MonadThrow
+   )
 
 data Env = Env
   { userId :: Text
@@ -79,7 +89,10 @@ readEnvCreds = do
 runAppEnv :: AppT IO a -> IO a
 runAppEnv app = do
   env <- readEnvCreds
-  runReaderT (runAppT app) env
+  eResult <- runExceptT $ runReaderT (runAppT app) env
+  case eResult of
+    Left x -> error $ show x
+    Right v -> pure v
   -- case app of
   --   AppT a -> case a of
   --     ReaderT ema -> ema env
@@ -109,4 +122,7 @@ testRemote = GitRemote
 runFwk :: AppT IO a -> IO a
 runFwk app = do
   env <- readTestCreds
-  runReaderT (runAppT app) env
+  eResult <- runExceptT $ runReaderT (runAppT app) env
+  case eResult of
+    Left x -> error $ show x
+    Right v -> pure v

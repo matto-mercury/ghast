@@ -24,6 +24,8 @@ authenticateWithBasic user pass =
   in
   addRequestHeader "Authorization" $ B8.pack "Basic " <> B64.encode (u <> ":" <> p)
 
+-- response is a phantom type - type-level construct only
+-- on the left side but not the right (value-level) side
 newtype TypedRequest response =
   TypedRequest { unTypedRequest :: Request }
 

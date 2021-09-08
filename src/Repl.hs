@@ -4,6 +4,7 @@
 module Repl where
 
 import Control.Monad.Catch
+import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.Aeson as J
 import Data.Functor
@@ -22,44 +23,36 @@ import UriFragment
 fromInt :: Int -> Text
 fromInt = pack . show
 
-data StopCondition
-  = Expected Text
-  | Surprise Text
-  deriving stock (Show)
-
+-- could be CPS instead of Either, but this is good for now
 listRuns :: (MonadThrow m, MonadIO m) => 
-  Int -> Text -> AppT m (Either StopCondition [CommitRunProj])
+  Int -> Text -> AppT m [CommitRunProj]
 listRuns page br = do
   runResp <- runTypedRequestM $ buildListRunsReq [perPage page, branch br]
   runs <- case getResponseStatusCode runResp of
-    200 -> pure . Right . lrWorkflowRuns $ getResponseBody runResp
-    401 -> pure . Left $ Surprise "Unauthorized"
-    403 -> pure . Left $ Surprise "Forbidden"
-    404 -> pure . Left $ Expected "Not found"
-    s | s < 500 -> pure . Left $ Surprise $ "Some other bad request: " <> fromInt s
-    s -> pure . Left $ Surprise $ "Their problem: " <> fromInt s
+    200 -> pure $ lrWorkflowRuns $ getResponseBody runResp
+    401 -> throwError $ Surprise "Unauthorized"
+    403 -> throwError $ Surprise "Forbidden"
+    404 -> throwError $ Expected "Not found"
+    s | s < 500 -> throwError $ Surprise $ "Some other bad request: " <> fromInt s
+    s -> throwError $ Surprise $ "Their problem: " <> fromInt s
 
-  case runs of
-    Left x -> pure $ Left x
-    Right rs | null rs -> pure . Left $ Expected "No runs"
-    Right rs -> pure $ Right rs
+  if null runs then throwError $ Expected "No runs"
+  else pure runs
 
 listJobs :: (MonadThrow m, MonadIO m) => 
-  CommitRunProj -> AppT m (Either StopCondition [JobsProj])
+  CommitRunProj -> AppT m [JobsProj]
 listJobs run = do
   jobsResp <- runTypedRequestM $ buildRunJobsRequest run []
   jobs <- case getResponseStatusCode jobsResp of
-    200 -> pure . Right . ljJobs $ getResponseBody jobsResp
-    401 -> pure . Left $ Surprise "Unauthorized"
-    403 -> pure . Left $ Surprise "Forbidden"
-    404 -> pure . Left $ Expected "Not found"
-    s | s < 500 -> pure . Left . Surprise $ "Some other bad request: " <> fromInt s
-    s -> pure . Left . Surprise $ "Their problem: " <> fromInt s
+    200 -> pure $ ljJobs $ getResponseBody jobsResp
+    401 -> throwError $ Surprise "Unauthorized"
+    403 -> throwError $ Surprise "Forbidden"
+    404 -> throwError $ Expected "Not found"
+    s | s < 500 -> throwError . Surprise $ "Some other bad request: " <> fromInt s
+    s -> throwError . Surprise $ "Their problem: " <> fromInt s
 
-  case jobs of 
-    Left x -> pure $ Left x
-    Right rs | null rs -> pure . Left . Surprise $ "No jobs for run " <> fromInt (crpId run)
-    Right rs -> pure $ Right rs
+  if null jobs then throwError . Surprise $ "No jobs for run " <> fromInt (crpId run)
+  else pure jobs
 
 -- jeez
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m [JobsProj]
@@ -76,12 +69,7 @@ doWorkSon = do
     , br
     ]
 
-  runs <- listRuns 1 br <&> \case 
-    Left x -> error $ show x
-    Right rs -> rs
-
-  jobs <- listJobs (head runs) <&> \case
-    Left x -> error $ show x
-    Right js -> js
+  jobs <- listRuns 1 br
+     >>= (listJobs . head)
 
   pure $ filter (\j -> (jpStatus j == Completed) && (jpConclusion j /= Success)) jobs 
