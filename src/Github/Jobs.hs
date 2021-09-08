@@ -15,7 +15,7 @@ import Shared
 import UriFragment
 
 data ListJobs = ListJobs
-  { ljTotalCount :: Integer
+  { ljTotalCount :: Int
   , ljJobs :: [JobsProj]
   }
   deriving stock (Generic, Show, Eq)
@@ -24,8 +24,8 @@ instance FromJSON ListJobs where
   parseJSON = genericParseJSON $ aesonOptions $ Just "lj"
 
 data JobsProj = JobsProj
-  { jpId :: Integer
-  , jpRunId :: Integer
+  { jpId :: Int
+  , jpRunId :: Int
   , jpStatus :: JobStatus
   , jpConclusion :: JobConclusion
   , jpStartedAt :: String
@@ -42,7 +42,7 @@ data JobSteps = JobSteps
   { jsName :: String
   , jsStatus :: JobStatus
   , jsConclusion :: JobConclusion
-  , jsNumber :: Integer
+  , jsNumber :: Int
   , jsStartedAt :: String
   , jsCompletedAt :: String
   }
@@ -87,7 +87,7 @@ buildJobLogsRequest JobsProj {jpId} = do
   let logsReqUri = githubJobLogs jpId
   buildGithubRequest logsReqUri []
 
-githubJobLogs :: Integer -> GitRemote -> Text
+githubJobLogs :: Int -> GitRemote -> Text
 githubJobLogs jobId GitRemote {..} =
   mconcat 
     [ "/repos/"

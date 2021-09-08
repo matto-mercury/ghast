@@ -12,7 +12,7 @@ import Request
 import Shared
 import UriFragment
 
-perPage :: Integer -> Parameter
+perPage :: Int -> Parameter
 perPage n = Param "per_page" (pack $ show n)
 
 branch :: Text -> Parameter
@@ -33,7 +33,7 @@ hardPath = const
 -- module. as it stands I'm just keeping it around for historical interest
 
 data UserDataProj = UserDataProj 
-  { udpId :: Integer
+  { udpId :: Int
   , udpName :: String
   , udpNodeId :: String
   }

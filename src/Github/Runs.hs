@@ -31,7 +31,7 @@ buildListRunsReq params =
   TypedRequest <$> buildGithubRequest githubListRuns params
 
 data ListRuns = ListRuns
-  { lrTotalCount :: Integer
+  { lrTotalCount :: Int
   , lrWorkflowRuns :: [CommitRunProj]
   }
   deriving stock (Generic, Show, Eq)
@@ -40,7 +40,7 @@ instance FromJSON ListRuns where
   parseJSON = genericParseJSON $ aesonOptions $ Just "lr"
 
 data CommitRunProj = CommitRunProj
-  { crpId :: Integer
+  { crpId :: Int
   , crpHeadBranch :: Text
   , crpStatus :: Text
   , crpConclusion :: Text

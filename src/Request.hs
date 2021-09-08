@@ -33,3 +33,4 @@ runTypedRequest req = do
 
 runTypedRequestM :: MonadIO m => FromJSON a => AppT m (TypedRequest a) -> AppT m (Response a)
 runTypedRequestM req = runTypedRequest =<< req
+
