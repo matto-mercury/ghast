@@ -84,7 +84,7 @@ readEnvCreds = do
       , gitBranch = b
       , gitRemote = r
       }
-    (_, _, _, _) -> error "oops"
+    (_, _, _, _) -> error "Invalid creds or git env parse failure"
 
 runAppEnv :: AppT IO a -> IO a
 runAppEnv app = do

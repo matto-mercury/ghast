@@ -54,6 +54,7 @@ instance FromJSON JobSteps where
 -- these aren't really documented anywhere that I can find in the API guide,
 -- but I'm stealing these enum values from the gh cli's source:
 --  pkg/cmd/run/shared/shared.go
+-- I'm pretty sure these are shared between jobs and runs, too
 data JobStatus
   = Queued
   | Completed

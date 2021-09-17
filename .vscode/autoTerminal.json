@@ -1,0 +1,1 @@
+[{"name":"Watch Awesome Project","description":"Starts the project 🔥","runOnStartUp":false,"windowTerminals":[[{"name":"Watch Awesome project","commands":["cd awesome","npm run watch"],"runLast":true},{"name":"Start Awesome project","commands":["cd awesome","npm start"],"runLast":false}],[{"name":"Start tests","commands":["cd awesome","npm run test"],"runLast":false}]]}]

@@ -10,5 +10,4 @@ import Repl
 
 main :: IO ()
 main = do
-  jobs <- runAppEnv doWorkSon
-  print jobs
+  runAppEnv doWorkSon

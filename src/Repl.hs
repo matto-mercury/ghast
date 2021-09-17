@@ -14,14 +14,17 @@ import Network.HTTP.Simple
 
 import AppEnvironment
 import Github
-import Github.Jobs
-import Github.Runs
+import Github.Jobs as GJ
+import Github.Runs as GR
 import Request
 import Shared
 import UriFragment
 
 fromInt :: Int -> Text
 fromInt = pack . show
+
+tshow :: Show a => a -> Text
+tshow = pack . show
 
 -- could be CPS instead of Either, but this is good for now
 listRuns :: (MonadThrow m, MonadIO m) => 
@@ -39,6 +42,20 @@ listRuns page br = do
   if null runs then throwError $ Expected "No runs"
   else pure runs
 
+failedLatest :: (MonadThrow m, MonadIO m) =>
+  [CommitRunProj] -> AppT m CommitRunProj
+failedLatest runs = do
+  let latest = head runs
+  status <- case crpStatus latest of
+    GR.Completed -> pure GR.Completed
+    s -> throwError $ Expected $ "Job status: " <> tshow s
+  conclusion <- case crpConclusion latest of
+    Just GR.Success -> throwError $ Expected "Job succeeded"  
+    Just c -> pure c
+    Nothing -> throwError $ Surprise "ope; job isn't complete but checked conclusion for some reason"
+
+  pure latest
+
 listJobs :: (MonadThrow m, MonadIO m) => 
   CommitRunProj -> AppT m [JobsProj]
 listJobs run = do
@@ -54,8 +71,16 @@ listJobs run = do
   if null jobs then throwError . Surprise $ "No jobs for run " <> fromInt (crpId run)
   else pure jobs
 
+failedJobs :: (MonadThrow m, MonadIO m) =>
+  [JobsProj] -> AppT m [JobsProj]
+failedJobs jobs = do
+  let failed = filter (\j -> (jpStatus j == GJ.Completed) && (jpConclusion j /= GJ.Success)) jobs 
+  case failed of
+    [] -> throwError $ Expected "No failed jobs"
+    xs -> pure xs
+
 -- jeez
-doWorkSon :: (MonadThrow m, MonadIO m) => AppT m [JobsProj]
+doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
   remote <- asks gitRemote
   br <- asks gitBranch
@@ -70,6 +95,8 @@ doWorkSon = do
     ]
 
   jobs <- listRuns 1 br
-     >>= (listJobs . head)
+      >>= failedLatest
+      >>= listJobs
+      >>= failedJobs
 
-  pure $ filter (\j -> (jpStatus j == Completed) && (jpConclusion j /= Success)) jobs 
+  liftIO $ print jobs
