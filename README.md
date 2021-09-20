@@ -15,11 +15,12 @@ GitHub Actions STatus CLI tool
   - owner (e.g. MercuryTechnologies)
   - repo (e.g. mercury-web-backend)
   - current branch (e.g. matto/rul-79)
-
-## Next up
 - get latest run, jobs in current branch
 - list failed jobs
+
+## Next up
 - download logs from failed jobs
+- parse errors out of logs
 
 ## Medium term
 - figure out how to work nicely with datetimes

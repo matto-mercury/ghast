@@ -10,7 +10,7 @@ import Network.HTTP.Simple
 
 import AppEnvironment
 import Github
-import Github.Jobs
+import Github.Jobs (ListJobs (..))
 import Request
 import Shared
 import UriFragment
@@ -75,23 +75,33 @@ data CommitRunProj = CommitRunProj
   , crpStatus :: RunStatus
   , crpConclusion :: Maybe RunConclusion -- got "("conclusion",Null)" back as a parse result
   , crpJobsUrl :: Text
-  , crpLogsUrl :: Text -- sends back a zipfile, apparently, probably not what I want
   }
   deriving stock (Generic, Show, Eq)
 
--- TODO: pull out crpStatus and crpConclusion from github cli golang source
+data CompletedRun = CompletedRun
+  { runId :: Int
+  , conclusion :: RunConclusion
+  , jobsUrl :: Text
+  }
+  deriving stock (Generic, Show, Eq)
+
+completedRunFrom :: CommitRunProj -> Either RunStatus CompletedRun
+completedRunFrom CommitRunProj {..} =
+  case (crpStatus, crpConclusion) of
+    -- this is a bit janky... I'm fairly confident that if status is Completed
+    --  there will be a conclusion, but it's not clear to me how to encode that
+    --  in a less sketchy way. we're throwing away any (incomplete, conclusion)
+    --  results, which are probably interesting from a perverse edge case POV,
+    --  but not super relevant to the task at hand
+    (Completed, Just c) -> Right CompletedRun 
+      { runId = crpId, conclusion = c, jobsUrl = crpJobsUrl }
+    (_, _) -> Left crpStatus
 
 instance FromJSON CommitRunProj where
   parseJSON = genericParseJSON $ aesonOptions $ Just "crp"
 
-buildRunJobsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m (TypedRequest ListJobs)
-buildRunJobsRequest CommitRunProj {crpJobsUrl} params = do -- NamedFieldPuns instead of {..}
+buildRunJobsRequest :: MonadThrow m => CompletedRun -> [Parameter] -> AppT m (TypedRequest ListJobs)
+buildRunJobsRequest CompletedRun {jobsUrl} params = do -- NamedFieldPuns instead of {..}
   (u, p) <- asks getCreds
-  uaReq <- setUserAgent <$> parseRequest (unpack $ crpJobsUrl <> render params)
+  uaReq <- setUserAgent <$> parseRequest (unpack $ jobsUrl <> render params)
   pure $ TypedRequest $ authenticateWithBasic u p uaReq
-
--- buildRunLogsRequest :: MonadThrow m => CommitRunProj -> [Parameter] -> AppT m Request
--- runLogsRequest CommitRunProj {crpLogsUrl} params = do
---   (u, p) <- asks getCreds
---   uaReq <- setUserAgent <$> parseRequest (unpack $ crpLogsUrl <> render params)
---   pure $ authenticateWithBasic u p uaReq

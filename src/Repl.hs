@@ -8,6 +8,8 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.Aeson as J
 import Data.Functor
+import Data.List.NonEmpty (NonEmpty (..))
+import qualified Data.List.NonEmpty as NEL
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import GHC.Generics
 import Network.HTTP.Simple
@@ -26,58 +28,53 @@ fromInt = pack . show
 tshow :: Show a => a -> Text
 tshow = pack . show
 
--- could be CPS instead of Either, but this is good for now
-listRuns :: (MonadThrow m, MonadIO m) => 
-  Int -> Text -> AppT m [CommitRunProj]
-listRuns page br = do
-  runResp <- runTypedRequestM $ buildListRunsReq [perPage page, branch br]
-  runs <- case getResponseStatusCode runResp of
-    200 -> pure $ lrWorkflowRuns $ getResponseBody runResp
+destructureResponse :: Monad m => (a -> b) -> Response a -> AppT m b
+destructureResponse accessor resp = do
+  case getResponseStatusCode resp of
+    200 -> pure $ accessor $ getResponseBody resp
     401 -> throwError $ Surprise "Unauthorized"
     403 -> throwError $ Surprise "Forbidden"
     404 -> throwError $ Expected "Not found"
     s | s < 500 -> throwError $ Surprise $ "Some other bad request: " <> fromInt s
     s -> throwError $ Surprise $ "Their problem: " <> fromInt s
 
-  if null runs then throwError $ Expected "No runs"
-  else pure runs
+listRuns :: (MonadThrow m, MonadIO m) => 
+  Int -> Text -> AppT m (NonEmpty CommitRunProj)
+listRuns page br = do
+  runResp <- runTypedRequestM $ buildListRunsReq [perPage page, branch br]
+  -- using >>= instead of <&> because the [] case is doing an unrelated but
+  -- monadic operation (throwError); if the case statement was pure we could
+  -- just drop the `pure` in x:xs and fmap
+  destructureResponse lrWorkflowRuns runResp >>= \case 
+    [] -> throwError $ Expected "No runs"
+    x:xs -> pure $ x :| xs
 
 failedLatest :: (MonadThrow m, MonadIO m) =>
-  [CommitRunProj] -> AppT m CommitRunProj
+  NonEmpty CommitRunProj -> AppT m CompletedRun
 failedLatest runs = do
-  let latest = head runs
-  status <- case crpStatus latest of
-    GR.Completed -> pure GR.Completed
-    s -> throwError $ Expected $ "Job status: " <> tshow s
-  conclusion <- case crpConclusion latest of
-    Just GR.Success -> throwError $ Expected "Job succeeded"  
-    Just c -> pure c
-    Nothing -> throwError $ Surprise "ope; job isn't complete but checked conclusion for some reason"
-
-  pure latest
+  let latest = NEL.head runs
+  completedLatest <- case completedRunFrom latest of
+    Right run -> pure run 
+    Left status -> throwError $ Expected $ "Job status: " <> tshow status
+  if conclusion completedLatest == GR.Success
+  then throwError $ Expected "Job succeeded"
+  else pure completedLatest
 
 listJobs :: (MonadThrow m, MonadIO m) => 
-  CommitRunProj -> AppT m [JobsProj]
+  CompletedRun -> AppT m (NonEmpty JobsProj)
 listJobs run = do
   jobsResp <- runTypedRequestM $ buildRunJobsRequest run []
-  jobs <- case getResponseStatusCode jobsResp of
-    200 -> pure $ ljJobs $ getResponseBody jobsResp
-    401 -> throwError $ Surprise "Unauthorized"
-    403 -> throwError $ Surprise "Forbidden"
-    404 -> throwError $ Expected "Not found"
-    s | s < 500 -> throwError . Surprise $ "Some other bad request: " <> fromInt s
-    s -> throwError . Surprise $ "Their problem: " <> fromInt s
-
-  if null jobs then throwError . Surprise $ "No jobs for run " <> fromInt (crpId run)
-  else pure jobs
+  destructureResponse ljJobs jobsResp >>= \case
+    [] -> throwError $ Surprise $ "No jobs for run " <> fromInt (runId run)
+    x:xs -> pure $ x :| xs
 
 failedJobs :: (MonadThrow m, MonadIO m) =>
-  [JobsProj] -> AppT m [JobsProj]
+  NonEmpty JobsProj -> AppT m (NonEmpty JobsProj)
 failedJobs jobs = do
-  let failed = filter (\j -> (jpStatus j == GJ.Completed) && (jpConclusion j /= GJ.Success)) jobs 
+  let failed = NEL.filter (\j -> (jpStatus j == GJ.Completed) && (jpConclusion j /= GJ.Success)) jobs 
   case failed of
     [] -> throwError $ Expected "No failed jobs"
-    xs -> pure xs
+    x:xs -> pure $ x :| xs
 
 -- jeez
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
