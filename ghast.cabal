@@ -36,6 +36,7 @@ library
       , TypeApplications
     exposed-modules:
         AppEnvironment
+      , Args
       , Github
       , Github.Jobs
       , Github.Runs
@@ -54,7 +55,7 @@ library
       , exceptions
       , http-conduit
       , mtl
-      , optparse-applicative
+      , optparse-generic
       , shelly
       , text
       , uri-encode

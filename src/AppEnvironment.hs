@@ -6,8 +6,11 @@ import Control.Monad.Reader
 import Data.Attoparsec.Text
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import qualified Data.Text as T (lines) 
+import Options.Generic
 import Shelly
 import System.Environment
+
+import Args
 
 data StopCondition
   = Expected Text
@@ -22,10 +25,11 @@ newtype AppT m a = AppT { runAppT :: ReaderT Env (ExceptT StopCondition m) a }
    )
 
 data Env = Env
-  { userId :: Text
-  , passwd :: Text
-  , gitBranch :: Text
-  , gitRemote :: GitRemote
+  { userId :: Text -- always from env
+  , passwd :: Text -- always from env
+  , gitBranch :: Text -- from env or cmd line
+  , gitRemote :: GitRemote -- always from env
+  , rawLogs :: Bool -- always from cmd line
   }
   deriving Show
 
@@ -83,13 +87,21 @@ readEnvCreds = do
       , passwd = pack p
       , gitBranch = b
       , gitRemote = r
+      , rawLogs = False
       }
     (_, _, _, _) -> error "Invalid creds or git env parse failure"
 
+fillArgs :: Args -> Env -> Env
+fillArgs Args {..} env =
+  case (branch, rawlogs) of
+    (Just b, rl) -> env { gitBranch = b, rawLogs = rl}
+    (Nothing, rl) -> env { rawLogs = rl }
+
 runAppEnv :: AppT IO a -> IO a
 runAppEnv app = do
+  args <- getRecord "ghast"
   env <- readEnvCreds
-  eResult <- runExceptT $ runReaderT (runAppT app) env
+  eResult <- runExceptT $ runReaderT (runAppT app) $ fillArgs args env
   case eResult of
     Left x -> error $ show x
     Right v -> pure v
@@ -111,6 +123,7 @@ readTestCreds = do
       , passwd = pack p
       , gitBranch = "matto/rul-88"
       , gitRemote = testRemote
+      , rawLogs = False
       }
 
 testRemote :: GitRemote
