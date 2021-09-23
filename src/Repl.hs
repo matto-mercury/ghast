@@ -104,6 +104,7 @@ doWorkSon = do
 
   liftIO . putStrLn $ fold $ failedJobMessage <$> jobs
 
+
 failedJobMessage :: FailedJob -> String
 failedJobMessage FailedJob {..} =
   let jobStepStatus :: JobStep -> String
