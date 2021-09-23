@@ -2,7 +2,7 @@ module Github.Jobs where
 
 import Control.Monad.Catch
 import Control.Monad.Reader
-import Data.Aeson
+import qualified Data.Aeson as JS
 import Data.Aeson.Casing (snakeCase)
 import Data.Text
 import GHC.Generics
@@ -20,36 +20,36 @@ data ListJobs = ListJobs
   }
   deriving stock (Generic, Show, Eq)
 
-instance FromJSON ListJobs where
-  parseJSON = genericParseJSON $ aesonOptions $ Just "lj"
+instance JS.FromJSON ListJobs where
+  parseJSON = JS.genericParseJSON $ aesonOptions $ Just "lj"
 
 data JobsProj = JobsProj
   { jpId :: Int
   , jpRunId :: Int
   , jpStatus :: JobStatus
   , jpConclusion :: JobConclusion
-  , jpStartedAt :: String
-  , jpCompletedAt :: String
-  , jpName :: String
-  , jpSteps :: [JobSteps]
+  , jpStartedAt :: Text
+  , jpCompletedAt :: Text
+  , jpName :: Text
+  , jpSteps :: [JobStep]
   }
   deriving stock (Generic, Show, Eq)
 
-instance FromJSON JobsProj where
-  parseJSON = genericParseJSON $ aesonOptions $ Just "jp"
+instance JS.FromJSON JobsProj where
+  parseJSON = JS.genericParseJSON $ aesonOptions $ Just "jp"
 
-data JobSteps = JobSteps
-  { jsName :: String
+data JobStep = JobStep
+  { jsName :: Text
   , jsStatus :: JobStatus
   , jsConclusion :: JobConclusion
   , jsNumber :: Int
-  , jsStartedAt :: String
-  , jsCompletedAt :: String
+  , jsStartedAt :: Text
+  , jsCompletedAt :: Text
   }
   deriving stock (Generic, Show, Eq)
 
-instance FromJSON JobSteps where
-  parseJSON = genericParseJSON $ aesonOptions $ Just "js"
+instance JS.FromJSON JobStep where
+  parseJSON = JS.genericParseJSON $ aesonOptions $ Just "js"
 
 -- these aren't really documented anywhere that I can find in the API guide,
 -- but I'm stealing these enum values from the gh cli's source:
@@ -63,8 +63,8 @@ data JobStatus
   | Waiting
   deriving stock (Generic, Show, Eq)
 
-instance FromJSON JobStatus where
-  parseJSON = genericParseJSON $ defaultOptions {constructorTagModifier = snakeCase}
+instance JS.FromJSON JobStatus where
+  parseJSON = JS.genericParseJSON $ JS.defaultOptions {JS.constructorTagModifier = snakeCase}
 
 data JobConclusion
   = Success
@@ -78,8 +78,29 @@ data JobConclusion
   | TimedOut
   deriving stock (Generic, Show, Eq)
 
-instance FromJSON JobConclusion where
-  parseJSON = genericParseJSON $ defaultOptions {constructorTagModifier = snakeCase}
+instance JS.FromJSON JobConclusion where
+  parseJSON = JS.genericParseJSON $ JS.defaultOptions {JS.constructorTagModifier = snakeCase}
+
+data FailedJob = FailedJob 
+  { fjName :: Text
+  , fjConclusion :: JobConclusion
+  , fjStartedAt :: Text
+  , fjCompletedAt :: Text
+  , fjSteps :: [JobStep]
+  }
+  deriving stock (Generic, Show, Eq)
+
+failedJobFrom :: JobsProj -> Maybe FailedJob
+failedJobFrom JobsProj {..} =
+  case jpConclusion of
+    Success -> Nothing
+    conc -> Just FailedJob 
+      { fjName = jpName
+      , fjConclusion = conc
+      , fjStartedAt = jpStartedAt
+      , fjCompletedAt = jpCompletedAt
+      , fjSteps = jpSteps
+      }
 
 -- it looks as though /jobs/{jobid}/logs returns the logs for the job as a
 -- string, as well as providing a link in the header

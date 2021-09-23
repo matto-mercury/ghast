@@ -7,8 +7,10 @@ import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.Aeson as J
+import Data.Foldable (fold)
 import Data.Functor
-import Data.List.NonEmpty (NonEmpty (..))
+import Data.List (intercalate)
+import Data.List.NonEmpty (NonEmpty (..), toList)
 import qualified Data.List.NonEmpty as NEL
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import GHC.Generics
@@ -69,12 +71,16 @@ listJobs run = do
     x:xs -> pure $ x :| xs
 
 failedJobs :: (MonadThrow m, MonadIO m) =>
-  NonEmpty JobsProj -> AppT m (NonEmpty JobsProj)
+  NonEmpty JobsProj -> AppT m (NonEmpty FailedJob)
 failedJobs jobs = do
   let failed = NEL.filter (\j -> (jpStatus j == GJ.Completed) && (jpConclusion j /= GJ.Success)) jobs 
+  let convert :: (MonadThrow m) => JobsProj -> AppT m FailedJob
+      convert fj = case failedJobFrom fj of
+        Nothing -> throwError $ Surprise $ "Job " <> tshow fj <> " slipped through the failed filter"
+        Just j -> pure j
   case failed of
     [] -> throwError $ Expected "No failed jobs"
-    x:xs -> pure $ x :| xs
+    x:xs -> sequenceA $ convert <$> (x :| xs)
 
 -- jeez
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
@@ -96,4 +102,11 @@ doWorkSon = do
       >>= listJobs
       >>= failedJobs
 
-  liftIO $ print jobs
+  liftIO . putStrLn $ fold $ failedJobMessage <$> jobs
+
+failedJobMessage :: FailedJob -> String
+failedJobMessage FailedJob {..} =
+  let jobStepStatus :: JobStep -> String
+      jobStepStatus j = unpack (jsName j) ++ ": " ++ show (jsConclusion j)
+      jobStepStatuses = intercalate "\n  " $ jobStepStatus <$> fjSteps
+   in unpack fjName ++ ": " ++ show fjConclusion ++ "\n  " ++ jobStepStatuses
