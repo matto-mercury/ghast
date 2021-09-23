@@ -13,6 +13,8 @@ import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import qualified Data.List.NonEmpty as NEL
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics
 import Network.HTTP.Simple
 
@@ -82,6 +84,13 @@ failedJobs jobs = do
     [] -> throwError $ Expected "No failed jobs"
     x:xs -> sequenceA $ convert <$> (x :| xs)
 
+rawLogsFor :: (MonadThrow m, MonadIO m) =>
+  FailedJob -> AppT m Text
+rawLogsFor job = do
+  logsReq <- buildFailedJobLogsRequest job
+  logsResp <- httpBS logsReq
+  destructureResponse decodeUtf8 logsResp
+
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
   remote <- asks gitRemote
@@ -103,6 +112,15 @@ doWorkSon = do
 
   liftIO . putStrLn $ fold $ failedJobMessage <$> jobs
 
+  rawLogsText <- rawLogsFor (NEL.head jobs)
+
+  showRawLogs <- asks rawLogs
+  let logLines = T.lines rawLogsText
+
+  if showRawLogs then
+    liftIO . putStrLn $ unpack rawLogsText
+  else
+    liftIO . putStrLn $ show (length logLines) ++ " lines of logs"
 
 failedJobMessage :: FailedJob -> String
 failedJobMessage FailedJob {..} =

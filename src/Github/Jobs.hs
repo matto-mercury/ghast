@@ -82,7 +82,8 @@ instance JS.FromJSON JobConclusion where
   parseJSON = JS.genericParseJSON $ JS.defaultOptions {JS.constructorTagModifier = snakeCase}
 
 data FailedJob = FailedJob 
-  { fjName :: Text
+  { fjId :: Int
+  , fjName :: Text
   , fjConclusion :: JobConclusion
   , fjStartedAt :: Text
   , fjCompletedAt :: Text
@@ -95,7 +96,8 @@ failedJobFrom JobsProj {..} =
   case jpConclusion of
     Success -> Nothing
     conc -> Just FailedJob 
-      { fjName = jpName
+      { fjId = jpId
+      , fjName = jpName
       , fjConclusion = conc
       , fjStartedAt = jpStartedAt
       , fjCompletedAt = jpCompletedAt
@@ -104,9 +106,10 @@ failedJobFrom JobsProj {..} =
 
 -- it looks as though /jobs/{jobid}/logs returns the logs for the job as a
 -- string, as well as providing a link in the header
-buildJobLogsRequest :: MonadThrow m => JobsProj -> AppT m Request
-buildJobLogsRequest JobsProj {jpId} = do
-  let logsReqUri = githubJobLogs jpId
+-- somehow this doesn't work with httpJSON, but does with httpBS
+buildFailedJobLogsRequest :: MonadThrow m => FailedJob -> AppT m Request
+buildFailedJobLogsRequest FailedJob {fjId} = do
+  let logsReqUri = githubJobLogs fjId
   buildGithubRequest logsReqUri []
 
 githubJobLogs :: Int -> GitRemote -> Text

@@ -35,12 +35,12 @@ library
       , RecordWildCards
       , TypeApplications
     exposed-modules:
-        AppEnvironment
+        Repl
+      , AppEnvironment
       , Args
       , Github
       , Github.Jobs
       , Github.Runs
-      , Repl
       , Request
       , Shared
       , UriFragment

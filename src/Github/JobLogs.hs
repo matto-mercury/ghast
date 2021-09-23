@@ -10,10 +10,7 @@ import Network.HTTP.Simple
 
 import AppEnvironment
 import Github
-import Github.Jobs
 import Request
 import Shared
 import UriFragment
-
-newtype RawJobLogs = Text
 

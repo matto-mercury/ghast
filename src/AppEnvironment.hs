@@ -132,12 +132,12 @@ testRemote = GitRemote
   , repo  = "mercury-web-backend"
   }
 
-runFwk :: AppT IO () -> IO ()
+runFwk :: AppT IO a -> IO a 
 runFwk app = do
   env <- readTestCreds
   eResult <- runExceptT $ runReaderT (runAppT app) env
   case eResult of
-    Left x -> showStop x
+    Left x -> error $ show x
     Right v -> pure v
 
 showStop :: StopCondition -> IO () 

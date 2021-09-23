@@ -13,3 +13,12 @@ logsResp <- httpBS logsReq
 logsBody = getResponseBody logsResp
 logsText = decodeUtf8 logsBody
 logsLines = Data.Text.lines logsText
+
+^^ old
+
+runs <- runFwk $ listRuns 1 "matto/rul-80"
+lFail <- runFwk $ failedLatest runs
+jobs <- runFwk $ listJobs lFail
+failedJobs <- runFwk $ failedJobs jobs
+let first = NEL.head failedJobs
+rawLogs <- runFwk $ rawLogsFor first
