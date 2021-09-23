@@ -97,13 +97,13 @@ fillArgs Args {..} env =
     (Just b, rl) -> env { gitBranch = b, rawLogs = rl}
     (Nothing, rl) -> env { rawLogs = rl }
 
-runAppEnv :: AppT IO a -> IO a
+runAppEnv :: AppT IO () -> IO ()
 runAppEnv app = do
   args <- getRecord "ghast"
   env <- readEnvCreds
   eResult <- runExceptT $ runReaderT (runAppT app) $ fillArgs args env
   case eResult of
-    Left x -> error $ show x
+    Left x -> showStop x
     Right v -> pure v
   -- case app of
   --   AppT a -> case a of
@@ -132,10 +132,16 @@ testRemote = GitRemote
   , repo  = "mercury-web-backend"
   }
 
-runFwk :: AppT IO a -> IO a
+runFwk :: AppT IO () -> IO ()
 runFwk app = do
   env <- readTestCreds
   eResult <- runExceptT $ runReaderT (runAppT app) env
   case eResult of
-    Left x -> error $ show x
+    Left x -> showStop x
     Right v -> pure v
+
+showStop :: StopCondition -> IO () 
+showStop stop = do
+  case stop of
+    Expected e -> putStrLn $ unpack e
+    Surprise s -> error $ unpack s

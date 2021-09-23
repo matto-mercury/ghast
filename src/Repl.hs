@@ -48,7 +48,7 @@ listRuns page br = do
   -- monadic operation (throwError); if the case statement was pure we could
   -- just drop the `pure` in x:xs and fmap
   destructureResponse lrWorkflowRuns runResp >>= \case 
-    [] -> throwError $ Expected "No runs"
+    [] -> throwError $ Expected "No GHA runs for current remote and branch"
     x:xs -> pure $ x :| xs
 
 failedLatest :: (MonadThrow m, MonadIO m) =>
@@ -82,7 +82,6 @@ failedJobs jobs = do
     [] -> throwError $ Expected "No failed jobs"
     x:xs -> sequenceA $ convert <$> (x :| xs)
 
--- jeez
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
   remote <- asks gitRemote
