@@ -25,12 +25,7 @@ import Github.Runs as GR
 import Request
 import Shared
 import UriFragment
-
-fromInt :: Int -> Text
-fromInt = pack . show
-
-tshow :: Show a => a -> Text
-tshow = pack . show
+import Util
 
 destructureResponse :: Monad m => (a -> b) -> Response a -> AppT m b
 destructureResponse accessor resp = do
@@ -39,8 +34,8 @@ destructureResponse accessor resp = do
     401 -> throwError $ Surprise "Unauthorized"
     403 -> throwError $ Surprise "Forbidden"
     404 -> throwError $ Expected "Not found"
-    s | s < 500 -> throwError $ Surprise $ "Some other bad request: " <> fromInt s
-    s -> throwError $ Surprise $ "Their problem: " <> fromInt s
+    s | s < 500 -> throwError $ Surprise $ "Some other bad request: " <> tshow s
+    s -> throwError $ Surprise $ "Their problem: " <> tshow s
 
 listRuns :: (MonadThrow m, MonadIO m) => 
   Int -> Text -> AppT m (NonEmpty CommitRunProj)
@@ -64,12 +59,30 @@ failedLatest runs = do
   then throwError $ Expected "Job succeeded"
   else pure completedLatest
 
+latestFailedRun :: (MonadThrow m, MonadIO m) => AppT m CompletedRun
+latestFailedRun = do
+  br <- asks gitBranch
+  listRuns 1 br >>= failedLatest
+
+specificRun :: (MonadThrow m, MonadIO m) =>
+  Int -> AppT m CompletedRun
+specificRun runId = do
+  runResp <- runTypedRequestM $ buildSpecificRunReq runId
+  destructureResponse completedRunFrom runResp >>= \case
+    Left s -> throwError . Expected $ "Completed run with ID " <> tshow runId <> " is " <> tshow s
+    Right r -> pure r
+
+getInterestingRun :: (MonadThrow m, MonadIO m) => AppT m CompletedRun
+getInterestingRun = do
+  specific <- asks thisRun
+  maybe latestFailedRun specificRun specific
+
 listJobs :: (MonadThrow m, MonadIO m) => 
   CompletedRun -> AppT m (NonEmpty JobsProj)
 listJobs run = do
   jobsResp <- runTypedRequestM $ buildRunJobsRequest run []
   destructureResponse ljJobs jobsResp >>= \case
-    [] -> throwError $ Surprise $ "No jobs for run " <> fromInt (runId run)
+    [] -> throwError $ Surprise $ "No jobs for run " <> tshow (runId run)
     x:xs -> pure $ x :| xs
 
 failedJobs :: (MonadThrow m, MonadIO m) =>
@@ -105,8 +118,9 @@ doWorkSon = do
     , br
     ]
 
-  jobs <- listRuns 1 br
-      >>= failedLatest
+  -- jobs <- listRuns 1 br
+  --     >>= failedLatest
+  jobs <- getInterestingRun
       >>= listJobs
       >>= failedJobs
 

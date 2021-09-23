@@ -14,7 +14,7 @@ import Github.Jobs (ListJobs (..))
 import Request
 import Shared
 import UriFragment
-
+import Util
 
 githubListRuns :: GitRemote -> Text
 githubListRuns GitRemote {..} = 
@@ -77,6 +77,21 @@ data CommitRunProj = CommitRunProj
   , crpJobsUrl :: Text
   }
   deriving stock (Generic, Show, Eq)
+
+githubGetRun :: Int -> GitRemote -> Text
+githubGetRun runId GitRemote {..} = 
+  mconcat 
+    [ "/repos/"
+    , owner
+    , "/"
+    , repo
+    , "/actions/runs/"
+    , tshow runId
+    ]
+
+buildSpecificRunReq :: MonadThrow m => Int -> AppT m (TypedRequest CommitRunProj)
+buildSpecificRunReq runId =
+  TypedRequest <$> buildGithubRequest (githubGetRun runId) []
 
 data CompletedRun = CompletedRun
   { runId :: Int

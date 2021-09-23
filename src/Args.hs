@@ -7,6 +7,7 @@ import Options.Generic
 data Args = Args 
   { branch :: Maybe Text
   , rawlogs :: Bool
+  , thisrun :: Maybe Int
   }
   deriving (Generic, Show)
 

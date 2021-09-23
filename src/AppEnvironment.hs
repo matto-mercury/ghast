@@ -30,6 +30,7 @@ data Env = Env
   , gitBranch :: Text -- from env or cmd line
   , gitRemote :: GitRemote -- always from env
   , rawLogs :: Bool -- always from cmd line
+  , thisRun :: Maybe Int
   }
   deriving Show
 
@@ -88,14 +89,16 @@ readEnvCreds = do
       , gitBranch = b
       , gitRemote = r
       , rawLogs = False
+      , thisRun = Nothing
       }
     (_, _, _, _) -> error "Invalid creds or git env parse failure"
 
 fillArgs :: Args -> Env -> Env
 fillArgs Args {..} env =
-  case (branch, rawlogs) of
-    (Just b, rl) -> env { gitBranch = b, rawLogs = rl}
-    (Nothing, rl) -> env { rawLogs = rl }
+  -- this pattern is obviously not going to scale
+  case (branch, rawlogs, thisrun) of
+    (Just b, rl, tr) -> env { gitBranch = b, rawLogs = rl, thisRun = tr }
+    (Nothing, rl, tr) -> env { rawLogs = rl, thisRun = tr }
 
 runAppEnv :: AppT IO () -> IO ()
 runAppEnv app = do
@@ -124,6 +127,7 @@ readTestCreds = do
       , gitBranch = "matto/rul-88"
       , gitRemote = testRemote
       , rawLogs = False
+      , thisRun = Nothing
       }
 
 testRemote :: GitRemote
