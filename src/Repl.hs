@@ -18,10 +18,13 @@ import Data.Text.Encoding (decodeUtf8)
 import GHC.Generics
 import Network.HTTP.Simple
 
+import Args
 import AppEnvironment
 import Github
 import Github.Jobs as GJ
 import Github.Runs as GR
+import Parsers.DateTime
+import Parsers.Filepath
 import Request
 import Shared
 import UriFragment
@@ -40,7 +43,7 @@ destructureResponse accessor resp = do
 listRuns :: (MonadThrow m, MonadIO m) => 
   Int -> Text -> AppT m (NonEmpty CommitRunProj)
 listRuns page br = do
-  runResp <- runTypedRequestM $ buildListRunsReq [perPage page, branch br]
+  runResp <- runTypedRequestM $ buildListRunsReq [perPage page, Github.branch br]
   -- using >>= instead of <&> because the [] case is doing an unrelated but
   -- monadic operation (throwError); if the case statement was pure we could
   -- just drop the `pure` in x:xs and fmap
@@ -109,6 +112,7 @@ doWorkSon = do
   remote <- asks gitRemote
   br <- asks gitBranch
 
+  -- this lies if we have a --thisjob param
   liftIO . putStrLn . unpack $ mconcat
     [ "remote: "
     , owner remote

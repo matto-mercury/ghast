@@ -100,6 +100,8 @@ fillArgs Args {..} env =
     (Just b, rl, tr) -> env { gitBranch = b, rawLogs = rl, thisRun = tr }
     (Nothing, rl, tr) -> env { rawLogs = rl, thisRun = tr }
 
+-- this is IO () so showStop can typecheck with putStrLn, which is IO ()
+-- it's a bit of a hack but will do for now
 runAppEnv :: AppT IO () -> IO ()
 runAppEnv app = do
   args <- getRecord "ghast"
@@ -111,6 +113,12 @@ runAppEnv app = do
   -- case app of
   --   AppT a -> case a of
   --     ReaderT ema -> ema env
+
+showStop :: StopCondition -> IO () 
+showStop stop = do
+  case stop of
+    Expected e -> putStrLn $ unpack e
+    Surprise s -> error $ unpack s
 
 -- repl test framework
 -- depends on real creds in the env but brings in hardcoded git stuff
@@ -143,9 +151,3 @@ runFwk app = do
   case eResult of
     Left x -> error $ show x
     Right v -> pure v
-
-showStop :: StopCondition -> IO () 
-showStop stop = do
-  case stop of
-    Expected e -> putStrLn $ unpack e
-    Surprise s -> error $ unpack s
