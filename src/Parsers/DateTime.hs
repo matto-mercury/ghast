@@ -29,7 +29,7 @@ pTime = do
   char ':'
   count 2 digit -- minute
   char ':'
-  count 2 digit -- second
+  double -- second (fractional)
   pure ()
 
 -- do I want structured datetimes? not yet I don't

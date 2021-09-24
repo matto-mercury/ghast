@@ -2,6 +2,8 @@ module Parsers.Filepath where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.Text
+import qualified Data.Attoparsec.Text as P
+import Data.Char (isAlpha)
 import Data.Text (Text)
 
 -- ghc compiler messages begin with a filepath that looks like
@@ -18,8 +20,32 @@ data LoggedFilepath = LoggedFilepath
   }
   deriving stock (Show)
 
+pDirectory :: Parser Text
+pDirectory = do
+  dir <- P.takeWhile (\c -> isAlpha c || c == '-')
+  char '/'
+  pure dir
+
 pDirectoryPath :: Parser [Text]
-pDirectoryPath = do
-  let pLetter = notChar '/'
-  let pDir = many1 pLetter
-  pDir `sepBy1` char '/'
+pDirectoryPath = many1 pDirectory
+
+pHaskellFile :: Parser Text
+pHaskellFile = do
+  file <- P.takeWhile (/= '.')
+  string ".hs"
+  pure $ file <> ".hs"
+
+pHaskellPath :: Parser LoggedFilepath
+pHaskellPath = do
+  path <- pDirectoryPath
+  file <- pHaskellFile
+  char ':'
+  line <- decimal
+  char ':'
+  col <- decimal
+  pure LoggedFilepath
+    { dirPath = path
+    , file = file
+    , line = line
+    , col = col 
+    } 

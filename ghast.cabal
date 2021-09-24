@@ -42,6 +42,8 @@ library
       , Github.Jobs
       , Github.Runs
       , Parsers.DateTime
+      , Parsers.Filepath
+      , Parsers.GhcErrorHeader
       , Request
       , Shared
       , UriFragment

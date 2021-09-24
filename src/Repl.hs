@@ -25,6 +25,7 @@ import Github.Jobs as GJ
 import Github.Runs as GR
 import Parsers.DateTime
 import Parsers.Filepath
+import Parsers.GhcErrorHeader
 import Request
 import Shared
 import UriFragment
@@ -146,3 +147,14 @@ failedJobMessage FailedJob {..} =
       jobStepStatus j = unpack (jsName j) ++ ": " ++ show (jsConclusion j)
       jobStepStatuses = intercalate "\n  " $ jobStepStatus <$> fjSteps
    in unpack fjName ++ ": " ++ show fjConclusion ++ "\n  " ++ jobStepStatuses
+
+-- for testing parsers
+
+sampleError :: Text
+sampleError = T.intercalate "\n"
+  [ "2021-09-17T00:27:22.8377115Z src/Mailer/Disputes/SendCustomerAcknowledgement.hs:14:15: error:"
+  , "2021-09-17T00:27:22.8409939Z ##[error]    Not in scope: type constructor or class ‘UserId’"
+  , "2021-09-17T00:27:22.8422210Z    |"
+  , "2021-09-17T00:27:22.8422816Z 14 |   { userId :: UserId"
+  , "2021-09-17T00:27:22.8423238Z    |               ^^^^^^"
+  ]
