@@ -7,6 +7,7 @@ import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.Aeson as J
+import Data.Attoparsec.Text
 import Data.Foldable (fold)
 import Data.Functor
 import Data.List (intercalate)
@@ -157,4 +158,12 @@ sampleError = T.intercalate "\n"
   , "2021-09-17T00:27:22.8422210Z    |"
   , "2021-09-17T00:27:22.8422816Z 14 |   { userId :: UserId"
   , "2021-09-17T00:27:22.8423238Z    |               ^^^^^^"
+  , ""
+  ]
+
+sampleErrText :: Text
+sampleErrText = T.intercalate "\n"
+  [ "2021-09-17T00:27:22.8455815Z ##[error]    • Variable not in scope:"
+  , "2021-09-17T00:27:22.8457296Z         shamletFile :: t0 -> Language.Haskell.TH.Lib.Internal.ExpQ"
+  , "2021-09-17T00:27:22.8458081Z     • Perhaps you meant ‘whamletFile’ (imported from Import)\n"
   ]
