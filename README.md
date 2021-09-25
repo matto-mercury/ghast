@@ -30,14 +30,33 @@ Github's `gh` CLI uses oauth2, I plan/hope to implement that eventually (see
 Github Actions jobs set up, you can run `ghast` from the command line and get a
 reasonable response for the currently checked-out branch.
 
+#### `--branch` selects a specific branch
+
 If you want to check a different branch, maybe because you bounced to a second
 project while the first was in CI, use `--branch your-branch-name`. `ghast` will
 display the branch it's trying to check on but assumes it can trust you, so if
 (for example) you yubikey the branch param it'll check for jobs on a branch
 starting with `ccccc` and helpfully tell you that there's no GHA runs for it.
 
+#### `--rawlogs` splats all the logs to stdout
+
 If you want to get the raw, unparsed logs for a failed run, use `--rawlogs`.
 Probably pipe the output to a file if you do.
+
+#### `--thisrun` selects a specific Github Actions run
+
+`ghast` normally pulls down info for the most recent Github Actions run on the
+current branch (or whatever you select with `--branch`), which is probably your
+most recent commit.
+
+If you're hacking on `ghast` and want to run it against a specific Github
+Actions run, use `--thisrun 12345678` (with the actual Actions run you want,
+obvs). You can find this ID in the URL when you're poking around the Github
+Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
+`gh` tool installed (that's github's CLI tool).
+
+> If you're not hacking on `ghast` I don't know why you'd use this switch, but
+> it's there if you want it.
 
 ## Roadmap, ish
 
