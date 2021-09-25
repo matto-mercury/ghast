@@ -1,6 +1,7 @@
 module Parsers.GhcErrors where
 
 import Control.Applicative ((<|>))
+import Data.Attoparsec.Combinator (lookAhead)
 import Data.Attoparsec.Text
 import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
@@ -9,16 +10,31 @@ import Data.Text (Text)
 import Parsers.DateTime
 import Parsers.Filepath
 
-newtype ErrorHeader = ErrorHeader { file :: LoggedFilepath }
+data GhcErrorHeader 
+  = ErrorHeader LoggedFilepath
+  | WarningHeader LoggedFilepath
   deriving stock (Show)
 
-pErrorHeader :: Parser ErrorHeader 
+pErrorHeader :: Parser GhcErrorHeader 
 pErrorHeader = do
   pDateTime
   file <- pHaskellPath
   string ": error:"
   endOfLine
-  pure ErrorHeader { file = file }
+  pure $ ErrorHeader file
+
+pWarningHeader :: Parser GhcErrorHeader
+pWarningHeader = do
+  pDateTime
+  file <- pHaskellPath
+  string ": error:"
+  skipSpace
+  string "[-W" -- indicates a warning flag
+  -- we don't actually care about the flag itself, probably, so I'm not going
+  -- to bother parsing it out yet
+  takeTill isEndOfLine
+  endOfLine
+  pure $ WarningHeader file
 
 -- this will catch the error description text
 pErrorText :: Parser Text
@@ -26,7 +42,10 @@ pErrorText = do
   pDateTime
   option "" (string "##[error]") -- first line seems to start with this
   skipSpace
-  text <- takeTill (\c -> (c == '|') || isEndOfLine c)
+  -- the next line that starts with | indicates the start of the code snippet,
+  -- which we want to treat differently from the error text
+  lookAhead $ notChar '|'
+  text <- takeTill isEndOfLine
   endOfLine
   pure text
 
@@ -50,7 +69,7 @@ pErrorCodeSnippet = do
   pure code
 
 data GhcError = GhcError
-  { errHeader :: ErrorHeader
+  { errHeader :: GhcErrorHeader
   , errText :: [Text]
   , errSnippet :: Text
   }
@@ -58,7 +77,7 @@ data GhcError = GhcError
 
 pGhcError :: Parser GhcError
 pGhcError = do
-  header <- pErrorHeader
+  header <- pErrorHeader <|> pWarningHeader
   text <- many1 pErrorText
   pErrorSnippetDelimiter
   code <- pErrorCodeSnippet

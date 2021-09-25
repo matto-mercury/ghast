@@ -26,7 +26,7 @@ import Github.Jobs as GJ
 import Github.Runs as GR
 import Parsers.DateTime
 import Parsers.Filepath
-import Parsers.GhcErrorHeader
+import Parsers.GhcErrors
 import Request
 import Shared
 import UriFragment
@@ -159,6 +159,17 @@ sampleError = T.intercalate "\n"
   , "2021-09-17T00:27:22.8422816Z 14 |   { userId :: UserId"
   , "2021-09-17T00:27:22.8423238Z    |               ^^^^^^"
   , ""
+  ]
+
+sampleWarning :: Text
+sampleWarning = T.intercalate "\n"
+  [ "2021-09-17T00:27:22.8473532Z src/Consumer/Jobs/SendDisputeEmails.hs:5:1: error: [-Wunused-imports, -Werror=unused-imports]"
+  , "2021-09-17T00:27:22.8474713Z ##[error]    The import of ‘Mercury.Banking.Types.Core’ is redundant"
+  , "2021-09-17T00:27:22.8476135Z       except perhaps to import instances from ‘Mercury.Banking.Types.Core’"
+  , "2021-09-17T00:27:22.8476861Z     To import instances alone, use: import Mercury.Banking.Types.Core()"
+  , "2021-09-17T00:27:22.8477313Z   |"
+  , "2021-09-17T00:27:22.8477837Z 5 | import Mercury.Banking.Types.Core (transactionAmountToDollar)"
+  , "2021-09-17T00:27:22.8478476Z   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n"
   ]
 
 sampleErrText :: Text

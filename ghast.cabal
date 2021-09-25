@@ -43,7 +43,7 @@ library
       , Github.Runs
       , Parsers.DateTime
       , Parsers.Filepath
-      , Parsers.GhcErrorHeader
+      , Parsers.GhcErrors
       , Request
       , Shared
       , UriFragment
