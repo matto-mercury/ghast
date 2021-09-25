@@ -80,6 +80,7 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
   - "fix your migrations"
   - golden types don't match
   - ...?
+- different verbosity levels
 
 ### Medium term
 - figure out how to work nicely with datetimes, if needed
