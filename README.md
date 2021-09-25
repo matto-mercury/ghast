@@ -52,13 +52,17 @@ Probably pipe the output to a file if you do.
 - download logs from failed jobs
 - command-line options
   - check a specified branch
+- check a specified run / job
+- parse ghc errors out of logs
 
 ### Next up
-- check a specified run / job
-- parse errors out of logs
+- parse more errors out of logs
+  - test failures
+  - "fix your migrations"
+  - golden types don't match
+  - ...?
 
 ### Medium term
-- 
 - figure out how to work nicely with datetimes, if needed
 
 ### Longer term
