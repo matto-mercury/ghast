@@ -27,6 +27,8 @@ import Github.Runs as GR
 import Parsers.DateTime
 import Parsers.Filepath
 import Parsers.GhcErrors
+import Parsers.GithubLogs
+import Parsers.OtherLogline
 import Request
 import Shared
 import UriFragment
@@ -124,23 +126,21 @@ doWorkSon = do
     , br
     ]
 
-  -- jobs <- listRuns 1 br
-  --     >>= failedLatest
   jobs <- getInterestingRun
       >>= listJobs
       >>= failedJobs
 
-  liftIO . putStrLn $ fold $ failedJobMessage <$> jobs
+  liftIO . putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage <$> jobs
+  liftIO $ putStrLn "\nDetails:\n"
 
   rawLogsText <- rawLogsFor (NEL.head jobs)
 
   showRawLogs <- asks rawLogs
-  let logLines = T.lines rawLogsText
 
   if showRawLogs then
     liftIO . putStrLn $ unpack rawLogsText
   else
-    liftIO . putStrLn $ show (length logLines) ++ " lines of logs"
+    liftIO . putStrLn . prettify $ parseOnly pGithubJobLogs rawLogsText
 
 failedJobMessage :: FailedJob -> String
 failedJobMessage FailedJob {..} =
@@ -177,4 +177,24 @@ sampleErrText = T.intercalate "\n"
   [ "2021-09-17T00:27:22.8455815Z ##[error]    • Variable not in scope:"
   , "2021-09-17T00:27:22.8457296Z         shamletFile :: t0 -> Language.Haskell.TH.Lib.Internal.ExpQ"
   , "2021-09-17T00:27:22.8458081Z     • Perhaps you meant ‘whamletFile’ (imported from Import)\n"
+  ]
+
+sampleGarbageText :: Text
+sampleGarbageText = T.intercalate "\n"
+  [ "2021-09-17T00:27:19.7084858Z [1407 of 1441] Compiling Tasks.SendFunderaSignupsReport ( src/Tasks/SendFunderaSignupsReport.hs, dist/build/Tasks/SendFunderaSignupsReport.o, dist/build/Tasks/SendFunderaSignupsReport.dyn_o )"
+  , "2021-09-17T00:27:19.7086922Z [1408 of 1441] Compiling Tasks.SendOutgoingChoiceAchFile ( src/Tasks/SendOutgoingChoiceAchFile.hs, dist/build/Tasks/SendOutgoingChoiceAchFile.o, dist/build/Tasks/SendOutgoingChoiceAchFile.dyn_o )"
+  , "2021-09-17T00:27:19.7088677Z [1409 of 1441] Compiling Tasks.SendPushNotification ( src/Tasks/SendPushNotification.hs, dist/build/Tasks/SendPushNotification.o, dist/build/Tasks/SendPushNotification.dyn_o )"
+  , "2021-09-17T00:27:19.7090448Z [1410 of 1441] Compiling Tasks.StuckSynapseCheckDeposits ( src/Tasks/StuckSynapseCheckDeposits.hs, dist/build/Tasks/StuckSynapseCheckDeposits.o, dist/build/Tasks/StuckSynapseCheckDeposits.dyn_o )\n"
+  ]
+
+sampleCorpus :: Text
+sampleCorpus = mconcat
+  [ sampleGarbageText
+  , sampleError
+  , sampleWarning
+  , sampleGarbageText
+  , sampleError
+  , sampleGarbageText
+  , sampleWarning
+  , sampleGarbageText
   ]

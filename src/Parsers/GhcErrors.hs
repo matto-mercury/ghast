@@ -70,7 +70,7 @@ pErrorCodeSnippet = do
 
 data GhcError = GhcError
   { errHeader :: GhcErrorHeader
-  , errText :: [Text]
+  , errText :: [Text] -- this can probably be a NonEmpty
   , errSnippet :: Text
   }
   deriving stock (Show)

@@ -44,6 +44,8 @@ library
       , Parsers.DateTime
       , Parsers.Filepath
       , Parsers.GhcErrors
+      , Parsers.GithubLogs
+      , Parsers.OtherLogline
       , Request
       , Shared
       , UriFragment
