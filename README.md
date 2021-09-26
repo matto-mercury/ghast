@@ -74,13 +74,18 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 - check a specified run / job
 - parse ghc errors out of logs
 
-### Next up
+### Next features
 - parse more errors out of logs
   - test failures
   - "fix your migrations"
   - golden types don't match
   - ...?
 - different verbosity levels
+
+### Tech debt
+- "Render pretty" functions scattered all over, mostly Repl and GithubLogs
+- "steps" logic all in Repl
+- repl test fixture crap in Repl (corpora) and AppEnvironment (framework)
 
 ### Medium term
 - figure out how to work nicely with datetimes, if needed

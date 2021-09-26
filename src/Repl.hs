@@ -113,18 +113,8 @@ rawLogsFor job = do
 
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
-  remote <- asks gitRemote
-  br <- asks gitBranch
-
-  -- this lies if we have a --thisjob param
-  liftIO . putStrLn . unpack $ mconcat
-    [ "remote: "
-    , owner remote
-    , "/"
-    , repo remote
-    , "\nbranch: "
-    , br
-    ]
+  banner <- repoConfigMessage
+  liftIO $ putStrLn banner
 
   jobs <- getInterestingRun
       >>= listJobs
@@ -141,6 +131,31 @@ doWorkSon = do
     liftIO . putStrLn $ unpack rawLogsText
   else
     liftIO . putStrLn . prettify $ parseOnly pGithubJobLogs rawLogsText
+
+repoConfigMessage :: (MonadThrow m, MonadIO m) => AppT m String 
+repoConfigMessage = do
+  remote <- asks gitRemote
+
+  let remoteStr = unpack $ mconcat
+        [ "remote: "
+        , owner remote
+        , "/"
+        , repo remote
+        , "\n"
+        ]
+
+  targetStr <- runTargetString
+
+  pure $ remoteStr ++ targetStr
+
+runTargetString :: (MonadThrow m, MonadIO m) => AppT m String
+runTargetString = do
+  branch <- asks gitBranch
+  run <- asks thisRun
+
+  pure $ case (branch, run) of
+    (br, Nothing) -> "branch: " ++ unpack br
+    (_, Just run) -> "run ID: " ++ show run
 
 failedJobMessage :: FailedJob -> String
 failedJobMessage FailedJob {..} =
