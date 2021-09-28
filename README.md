@@ -86,6 +86,7 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 - "Render pretty" functions scattered all over, mostly Repl and GithubLogs
 - "steps" logic all in Repl
 - repl test fixture crap in Repl (corpora) and AppEnvironment (framework)
+- parsers could use names to improve attoparsec errors
 
 ### Medium term
 - figure out how to work nicely with datetimes, if needed

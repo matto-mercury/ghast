@@ -28,8 +28,8 @@ pmLoggedItems :: Parser [Maybe GhcError]
 pmLoggedItems = many1 $ pmGhcError <|> pmOtherLine
 
 -- this return type will have to grow eventually
-pGithubJobLogs :: Parser [GhcError]
-pGithubJobLogs = catMaybes <$> pmLoggedItems
+parseGithubJobLogs :: Text -> Either String [GhcError]
+parseGithubJobLogs logs = catMaybes <$> parseOnly pmLoggedItems logs
 
 -- not sure if this belongs here but whatever
 -- eventually this'll take a verbosity argument

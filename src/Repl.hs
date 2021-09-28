@@ -116,9 +116,8 @@ doWorkSon = do
   banner <- repoConfigMessage
   liftIO $ putStrLn banner
 
-  jobs <- getInterestingRun
-      >>= listJobs
-      >>= failedJobs
+  run <- getInterestingRun
+  jobs <- failedJobs =<< listJobs run
 
   liftIO . putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage <$> jobs
   liftIO $ putStrLn "\nDetails:\n"
@@ -130,7 +129,10 @@ doWorkSon = do
   if showRawLogs then
     liftIO . putStrLn $ unpack rawLogsText
   else
-    liftIO . putStrLn . prettify $ parseOnly pGithubJobLogs rawLogsText
+    liftIO . putStrLn . prettify $ parseGithubJobLogs rawLogsText
+
+  let runIdStr = show $ runId run -- why I can't inline this is beyond me
+  liftIO . putStrLn $ "\nRunID: " ++ runIdStr
 
 repoConfigMessage :: (MonadThrow m, MonadIO m) => AppT m String 
 repoConfigMessage = do
