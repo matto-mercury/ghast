@@ -28,6 +28,7 @@ import Parsers.DateTime
 import Parsers.Filepath
 import Parsers.GhcErrors
 import Parsers.GithubLogs
+import Parsers.MigrationMismatch
 import Parsers.OtherLogline
 import Request
 import Shared
@@ -202,6 +203,30 @@ sampleGarbageText = T.intercalate "\n"
   , "2021-09-17T00:27:19.7086922Z [1408 of 1441] Compiling Tasks.SendOutgoingChoiceAchFile ( src/Tasks/SendOutgoingChoiceAchFile.hs, dist/build/Tasks/SendOutgoingChoiceAchFile.o, dist/build/Tasks/SendOutgoingChoiceAchFile.dyn_o )"
   , "2021-09-17T00:27:19.7088677Z [1409 of 1441] Compiling Tasks.SendPushNotification ( src/Tasks/SendPushNotification.hs, dist/build/Tasks/SendPushNotification.o, dist/build/Tasks/SendPushNotification.dyn_o )"
   , "2021-09-17T00:27:19.7090448Z [1410 of 1441] Compiling Tasks.StuckSynapseCheckDeposits ( src/Tasks/StuckSynapseCheckDeposits.hs, dist/build/Tasks/StuckSynapseCheckDeposits.o, dist/build/Tasks/StuckSynapseCheckDeposits.dyn_o )\n"
+  ]
+
+sampleSmallMigrationMismatchText :: Text
+sampleSmallMigrationMismatchText = T.intercalate "\n"
+  [ "2021-09-29T21:46:07.0506463Z If you have an intentional mismatch, you can add it to the `intentionalMismatches` list in Application.hs."
+  , "2021-09-29T21:46:07.0507688Z ALTER TABLE \"urbanft_transactions\" ALTER COLUMN \"check_number\" TYPE non_empty_text_299"
+  , "2021-09-29T21:46:07.0507692Z ALTER TABLE \"something_else\" ALTER COLUMN \"check_number\" TYPE non_empty_text_299"
+  , "2021-09-29T21:46:07.0508629Z test: MigrationMismatch \"Please fix your migrations\"\n"
+  ]
+
+sampleMigrationMismatchText :: Text
+sampleMigrationMismatchText = T.intercalate "\n"
+  [ "2021-09-29T21:46:01.4845114Z WARNING:  there is no transaction in progress"
+  , "2021-09-29T21:46:03.0747026Z Running 1 test suites..."
+  , "2021-09-29T21:46:03.0758403Z Test suite test: RUNNING..."
+  , "2021-09-29T21:46:07.0503525Z Warning: The following migrations may be necessary to match the DB schema to Persistent's models."
+  , "2021-09-29T21:46:07.0505061Z (If the migration is spurious, see if you can fix Persistent or hardcode something to ignore the migration)."
+  , "2021-09-29T21:46:07.0506463Z If you have an intentional mismatch, you can add it to the `intentionalMismatches` list in Application.hs."
+  , "2021-09-29T21:46:07.0507688Z ALTER TABLE \"urbanft_transactions\" ALTER COLUMN \"check_number\" TYPE non_empty_text_299"
+  , "2021-09-29T21:46:07.0507692Z ALTER TABLE \"something_else\" ALTER COLUMN \"check_number\" TYPE non_empty_text_299"
+  , "2021-09-29T21:46:07.0508629Z test: MigrationMismatch \"Please fix your migrations\""
+  , "2021-09-29T21:46:07.0509313Z Test suite test: FAIL"
+  , "2021-09-29T21:46:07.0510265Z Test suite logged to: dist/test/mwb-0-test.log"
+  , "2021-09-29T21:46:07.0510930Z 0 of 1 test suites (0 of 1 test cases) passed.\n"
   ]
 
 sampleCorpus :: Text

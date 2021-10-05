@@ -14,29 +14,49 @@ import Data.Text (Text, unpack)
 
 import Parsers.Filepath
 import Parsers.GhcErrors
+import Parsers.MigrationMismatch
 import Parsers.OtherLogline
 
-pmGhcError :: Parser (Maybe GhcError)
-pmGhcError = Just <$> pGhcError
+data BuildError
+  = DiscardedLine
+  | CompilerError GhcError
+  | MigrationError MigrationMismatch
 
-pmOtherLine :: Parser (Maybe GhcError)
-pmOtherLine = do
+pBuildError :: Parser BuildError
+pBuildError = CompilerError <$> pGhcError
+
+pMigrationError :: Parser BuildError
+pMigrationError = MigrationError <$> pMigrationMismatch
+
+pDiscardedLine :: Parser BuildError
+pDiscardedLine = do
   pOtherLogline
-  pure Nothing
+  pure DiscardedLine
 
-pmLoggedItems :: Parser [Maybe GhcError]
-pmLoggedItems = many1 $ pmGhcError <|> pmOtherLine
+pLoggedItems :: Parser [BuildError]
+pLoggedItems = many1 $ pBuildError <|> pMigrationError <|> pDiscardedLine
 
--- this return type will have to grow eventually
-parseGithubJobLogs :: Text -> Either String [GhcError]
-parseGithubJobLogs logs = catMaybes <$> parseOnly pmLoggedItems logs
+parseGithubJobLogs :: Text -> Either String [BuildError]
+parseGithubJobLogs logs = catErrors <$> parseOnly pLoggedItems logs
+
+catErrors :: [BuildError] -> [BuildError]
+catErrors [] = []
+catErrors (e:es) = case e of
+  DiscardedLine -> catErrors es
+  a -> a : catErrors es
 
 -- not sure if this belongs here but whatever
 -- eventually this'll take a verbosity argument
-prettify :: Either String [GhcError] -> String
+prettify :: Either String [BuildError] -> String
 prettify = \case
   Left s -> "shit, failed to parse (" ++ s ++ "), try running with --rawlogs"
-  Right errors -> intercalate "\n" $ renderGhcError <$> errors
+  Right errors -> intercalate "\n" $ renderBuildError <$> errors
+
+renderBuildError :: BuildError -> String
+renderBuildError = \case
+  DiscardedLine -> "can't happen"
+  CompilerError e -> renderGhcError e
+  MigrationError e -> renderMigrationError e
 
 renderGhcError :: GhcError -> String
 renderGhcError GhcError {..} = intercalate "\n"
@@ -44,6 +64,10 @@ renderGhcError GhcError {..} = intercalate "\n"
   , "  " ++ unpack (head errText)
   , "  " ++ renderSnippetWith (pathOf errHeader) errSnippet
   ]
+
+renderMigrationError :: MigrationMismatch -> String
+renderMigrationError MigrationMismatch {..} = intercalate "\n" $
+  "Suggested migrations:" : (unpack <$> migrations)
 
 -- this is awkward and is telling me my GhcErrorHeader type sucks
 pathOf :: GhcErrorHeader -> LoggedFilepath

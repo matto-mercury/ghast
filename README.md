@@ -77,6 +77,7 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 ### Next features
 - parse more errors out of logs
   - test failures
+    - try to find a prefix match for "To rerun use: " --match flags
   - "fix your migrations"
   - golden types don't match
   - ...?
@@ -93,3 +94,7 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 
 ### Longer term
 - oauth2 support
+- background mode: start `ghast` as a commit hook, have it poll github in the
+ background. maybe it sets an environment variable when it's done, something
+ you could have in your prompt. then subsequent calls to `ghast` call the
+ background daemon instead of checking github all the time
