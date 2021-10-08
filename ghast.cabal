@@ -103,10 +103,12 @@ test-suite ghast-test
     build-depends:
         base
       , ghast
+      , attoparsec
       , bytestring
       , case-insensitive
       , exceptions
       , hspec
+      , hspec-attoparsec
       , http-conduit
       , http-types
       , text

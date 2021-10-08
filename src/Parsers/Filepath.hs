@@ -18,7 +18,7 @@ data LoggedFilepath = LoggedFilepath
   , line :: Int
   , col :: Int
   }
-  deriving stock (Show)
+  deriving stock (Show, Eq)
 
 pDirectory :: Parser Text
 pDirectory = do

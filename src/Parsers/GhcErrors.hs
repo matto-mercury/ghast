@@ -13,7 +13,7 @@ import Parsers.Filepath
 data GhcErrorHeader 
   = ErrorHeader LoggedFilepath
   | WarningHeader LoggedFilepath
-  deriving stock (Show)
+  deriving stock (Show, Eq)
 
 pErrorHeader :: Parser GhcErrorHeader 
 pErrorHeader = do
@@ -73,7 +73,7 @@ data GhcError = GhcError
   , errText :: [Text] -- this can probably be a NonEmpty
   , errSnippet :: Text
   }
-  deriving stock (Show)
+  deriving stock (Show, Eq)
 
 pGhcError :: Parser GhcError
 pGhcError = do
