@@ -50,7 +50,6 @@ library
       , Request
       , Shared
       , UriFragment
-      , Util
     build-depends:
         base ^>=4.14.1.0
       , aeson

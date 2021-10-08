@@ -14,7 +14,7 @@ import UriFragment
 
 setUserAgent :: Request -> Request
 setUserAgent bareReq =
-  let (name, val) = ("User-Agent", "ghast-0.1.0.0") in
+  let (name, val) = ("User-Agent", "ghast-0.3.0.0") in
   addRequestHeader name val bareReq
 
 authenticateWithBasic :: Text -> Text -> Request -> Request

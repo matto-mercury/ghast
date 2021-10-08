@@ -33,7 +33,6 @@ import Parsers.OtherLogline
 import Request
 import Shared
 import UriFragment
-import Util
 
 destructureResponse :: Monad m => (a -> b) -> Response a -> AppT m b
 destructureResponse accessor resp = do

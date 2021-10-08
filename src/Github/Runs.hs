@@ -14,7 +14,6 @@ import Github.Jobs (ListJobs (..))
 import Request
 import Shared
 import UriFragment
-import Util
 
 githubListRuns :: GitRemote -> Text
 githubListRuns GitRemote {..} = 

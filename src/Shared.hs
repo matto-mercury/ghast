@@ -5,7 +5,11 @@ module Shared where
 
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
+import Data.Text (Text, pack)
 
 aesonOptions :: Maybe String -> Options
 aesonOptions ms = defaultOptions { fieldLabelModifier = snakeCase . drop len }
   where len = maybe 0 length ms
+
+tshow :: Show a => a -> Text
+tshow = pack . show

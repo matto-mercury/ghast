@@ -13,7 +13,7 @@ import Shared
 import UriFragment
 
 perPage :: Int -> Parameter
-perPage n = Param "per_page" (pack $ show n)
+perPage n = Param "per_page" (tshow n)
 
 branch :: Text -> Parameter
 branch = Param "branch"
