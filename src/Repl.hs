@@ -30,6 +30,7 @@ import Parsers.GhcErrors
 import Parsers.GithubLogs
 import Parsers.MigrationMismatch
 import Parsers.OtherLogline
+import Parsers.TestFailure
 import Request
 import Shared
 import UriFragment

@@ -47,6 +47,7 @@ library
       , Parsers.GithubLogs
       , Parsers.MigrationMismatch
       , Parsers.OtherLogline
+      , Parsers.TestFailure
       , Request
       , Shared
       , UriFragment

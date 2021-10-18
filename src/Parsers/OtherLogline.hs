@@ -14,3 +14,8 @@ pOtherLogline = do
   pDateTime
   takeTill isEndOfLine
   endOfLine
+
+pEmptyLogline :: Parser ()
+pEmptyLogline = do
+  pDateTime
+  endOfLine

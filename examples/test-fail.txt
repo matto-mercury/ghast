@@ -1,0 +1,34 @@
+2021-10-15T00:09:57.9397636Z     works with multiple non-nothings
+2021-10-15T00:09:57.9397994Z     works with nothing
+2021-10-15T00:09:57.9398299Z Unit.Onboarding
+2021-10-15T00:09:57.9398600Z   EIN numbers
+2021-10-15T00:09:57.9398892Z     rejects invalid EINs
+2021-10-15T00:09:57.9399296Z     accepts valid EINs
+2021-10-15T00:09:57.9399604Z   Percentages
+2021-10-15T00:09:57.9399911Z     rejects invalid
+2021-10-15T00:09:57.9400220Z     accepts valid EINs
+2021-10-15T00:09:57.9400482Z   SSNs
+2021-10-15T00:09:57.9400764Z     rejects invalid SSNs
+2021-10-15T00:09:57.9401073Z     accepts valid SSNs
+2021-10-15T00:09:57.9401364Z Unit.TOTP
+2021-10-15T00:09:57.9401611Z   TOTP
+2021-10-15T00:09:57.9402048Z     Unsafe functions don't throw errors
+2021-10-15T00:09:57.9402415Z       Creates 3 step config
+2021-10-15T00:09:57.9402736Z       Creates 4 step config
+2021-10-15T00:09:57.9402946Z 
+2021-10-15T00:09:57.9403181Z Failures:
+2021-10-15T00:09:57.9403364Z 
+2021-10-15T00:09:57.9403958Z   test/Handler/Banking/SearchTransactionDisputedFlagSpec.hs:35:7:
+2021-10-15T00:09:57.9405561Z   1) Handler.Banking.SearchTransactionDisputedFlag, Transaction disputed flags in transaction response, returns the correct value when there is and isn't a dispute
+2021-10-15T00:09:57.9406623Z        Assertion: transaction has been disputed now
+2021-10-15T00:09:57.9407199Z        First argument:  TransactionWasDisputedByUser
+2021-10-15T00:09:57.9407909Z        Second argument: TransactionWasNotDisputed
+2021-10-15T00:09:57.9408262Z 
+2021-10-15T00:09:57.9409454Z   To rerun use: --match "/Handler.Banking.SearchTransactionDisputedFlag/Transaction disputed flags in transaction response/returns the correct value when there is and isn't a dispute/"
+2021-10-15T00:09:57.9410318Z 
+2021-10-15T00:09:57.9410594Z Randomized with seed 1337012934
+2021-10-15T00:09:57.9410811Z 
+2021-10-15T00:09:57.9411091Z Finished in 142.0756 seconds
+2021-10-15T00:09:57.9411454Z 2147 examples, 1 failure, 1 pending
+2021-10-15T00:09:57.9411807Z Test suite test: FAIL
+2021-10-15T00:09:57.9412305Z Test suite logged to: dist/test/mwb-0-test.log
