@@ -1,0 +1,21 @@
+Failures:
+
+  test/Handler/Disputes/DisputeNotificationSpec.hs:30:7: 
+  1) Handler.Disputes.DisputeNotification, Dispute creation, Writes a dispute to the DB when called correctly
+       Expected status was 404 but received status was 200. For debugging, the body was: "27e158f8-31d1-11ec-8a4a-e3fa22e44b77"
+
+  To rerun use: --match "/Handler.Disputes.DisputeNotification/Dispute creation/Writes a dispute to the DB when called correctly/"
+
+  test/Handler/Disputes/DisputeNotificationSpec.hs:51:7: 
+  2) Handler.Disputes.DisputeNotification, Dispute creation, tracks corrected amounts
+       Expected status was 404 but received status was 200. For debugging, the body was: "27e9b8cc-31d1-11ec-8a4a-0339feff3eef"
+
+  To rerun use: --match "/Handler.Disputes.DisputeNotification/Dispute creation/tracks corrected amounts/"
+
+  test/Handler/Disputes/DisputeNotificationSpec.hs:164:7: 
+  3) Handler.Disputes.DisputeNotification.Authorization doesn't allow a user from another org to post a dispute
+       Expected status was 404 but received status was 403. For debugging, the body was: {"errors":{"permissionDenied":["You do not have access to that feature"]}}
+
+  To rerun use: --match "/Handler.Disputes.DisputeNotification/Authorization/doesn't allow a user from another org to post a dispute/"
+
+Randomized with seed 1322846879

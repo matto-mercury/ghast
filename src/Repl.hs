@@ -8,6 +8,7 @@ import Control.Monad.Except
 import Control.Monad.Reader
 import qualified Data.Aeson as J
 import Data.Attoparsec.Text
+import qualified Data.Attoparsec.Text as P
 import Data.Foldable (fold)
 import Data.Functor
 import Data.List (intercalate)

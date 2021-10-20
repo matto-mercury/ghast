@@ -2,6 +2,7 @@ module Parsers.DateTime where
 
 import Control.Applicative ((<|>))
 import Data.Attoparsec.Text
+import Data.Attoparsec.Combinator (option)
 import Data.Text (Text)
 
 -- We don't actually care (yet?) about DateTimes in ghast, but the build logs
@@ -39,5 +40,8 @@ pDateTime = do
   char 'T'
   pTime
   char 'Z'
-  char ' '
+  -- if there is anything after the datetime, there will be at least one space
+  -- between them. it's convenient to munch it here if it exists, but if it
+  -- doesn't we don't want to fail the parse
+  option ' ' (char ' ')
   pure ()

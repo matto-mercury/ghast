@@ -16,3 +16,6 @@ spec = do
     it "also handles slashed dates" $ do
       parseOnly pDateTime "2021/09/29T21:46:07.0508629Z some other shit"
       `shouldBe` Right ()
+    it "also does fine when there's nothing after the datetime" $ do
+      parseOnly pDateTime "2021/09/29T21:46:07.0508629Z"
+      `shouldBe` Right ()
