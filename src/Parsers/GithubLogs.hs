@@ -16,10 +16,12 @@ import Parsers.Filepath
 import Parsers.GhcErrors
 import Parsers.MigrationMismatch
 import Parsers.OtherLogline
+import Parsers.TestFailure
 
 data BuildError
   = DiscardedLine
   | CompilerError GhcError
+  | FailedTest TestSuiteFailures
   | MigrationError MigrationMismatch
 
 pBuildError :: Parser BuildError
@@ -28,13 +30,16 @@ pBuildError = CompilerError <$> pGhcError
 pMigrationError :: Parser BuildError
 pMigrationError = MigrationError <$> pMigrationMismatch
 
+pFailedTest :: Parser BuildError
+pFailedTest = FailedTest <$> pTestSuiteFailures
+
 pDiscardedLine :: Parser BuildError
 pDiscardedLine = do
   pOtherLogline
   pure DiscardedLine
 
 pLoggedItems :: Parser [BuildError]
-pLoggedItems = many1 $ pBuildError <|> pMigrationError <|> pDiscardedLine
+pLoggedItems = many1 $ pBuildError <|> pMigrationError <|> pFailedTest <|> pDiscardedLine
 
 parseGithubJobLogs :: Text -> Either String [BuildError]
 parseGithubJobLogs logs = catErrors <$> parseOnly pLoggedItems logs
@@ -57,6 +62,7 @@ renderBuildError = \case
   DiscardedLine -> "can't happen"
   CompilerError e -> renderGhcError e
   MigrationError e -> renderMigrationError e
+  FailedTest t -> renderFailedTest t
 
 renderGhcError :: GhcError -> String
 renderGhcError GhcError {..} = intercalate "\n"
@@ -79,10 +85,6 @@ renderHeader :: GhcErrorHeader -> String
 renderHeader = \case
   ErrorHeader path -> "Err: " ++ renderPath path
   WarningHeader path -> "Warn: " ++ renderPath path
-
-renderPath :: LoggedFilepath -> String
-renderPath LoggedFilepath {..} = intercalate "/" strings
-  where strings = (unpack <$> dirPath) ++ [unpack file]
 
 renderSnippetWith :: LoggedFilepath -> Text -> String
 renderSnippetWith LoggedFilepath {line} snippet =

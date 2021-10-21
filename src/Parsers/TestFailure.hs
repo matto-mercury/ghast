@@ -5,8 +5,9 @@ import Data.Attoparsec.Combinator (lookAhead)
 import Data.Attoparsec.Text
 import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
+import qualified Data.List as L (intercalate)
 import Data.Maybe (catMaybes)
-import Data.Text (Text)
+import Data.Text (Text, unpack)
 
 import Parsers.DateTime
 import Parsers.Filepath
@@ -107,3 +108,25 @@ pTestSuiteFailures = do
   seed <- pRerunSeedLine
   pOtherLogline
   pure $ TestSuiteFailures fails seed
+
+-- renderer
+renderFailedTest :: TestSuiteFailures -> String
+renderFailedTest TestSuiteFailures {..} =
+  L.intercalate "\n"
+    [ show (length failures) ++ "tests failed:"
+      -- awkward, now this needs to be a string
+      -- guess that shows intercalate isn't quite the right thing,
+      -- and I need to propagate indentation or something
+    , renderFailures failures
+    , "Random seed " ++ show seed
+    ]
+
+renderFailures :: [TestFailure] -> String
+renderFailures fails = 
+  L.intercalate "\n  " $ "  " : (renderFailure <$> fails)
+
+renderFailure :: TestFailure -> String
+renderFailure TestFailure {..} =
+  renderPath filepath ++ 
+  "\n    " ++ unpack (testPath testpath) ++
+  "\n    " ++ L.intercalate "\n    " (unpack <$> details)

@@ -4,7 +4,8 @@ import Control.Applicative ((<|>))
 import Data.Attoparsec.Text
 import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
-import Data.Text (Text)
+import qualified Data.List as L (intercalate)
+import Data.Text (Text, unpack)
 
 -- ghc compiler messages begin with a filepath that looks like
 --  list/of/directories/sourcefile.hs:line:col
@@ -49,3 +50,9 @@ pHaskellPath = do
     , line = line
     , col = col 
     } 
+
+-- renderers
+
+renderPath :: LoggedFilepath -> String
+renderPath LoggedFilepath {..} = L.intercalate "/" strings
+  where strings = (unpack <$> dirPath) ++ [unpack file]
