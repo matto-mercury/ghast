@@ -113,7 +113,7 @@ pTestSuiteFailures = do
 renderFailedTest :: TestSuiteFailures -> String
 renderFailedTest TestSuiteFailures {..} =
   L.intercalate "\n"
-    [ show (length failures) ++ "tests failed:"
+    [ show (length failures) ++ " tests failed:"
       -- awkward, now this needs to be a string
       -- guess that shows intercalate isn't quite the right thing,
       -- and I need to propagate indentation or something
