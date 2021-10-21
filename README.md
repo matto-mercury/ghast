@@ -11,6 +11,11 @@ comfort of your terminal.
 
 Builds with `cabal`. Sorry, `stack` fans.
 
+#### Building with Nix
+`nix-build release.nix` should build the executable `ghast`, which will be
+accessible at `result/bin/ghast`. The first build may take a couple minutes, but
+following builds will be quicker as the project dependencies will be cached.
+
 ### Authenticating
 
 `ghast` pulls credentials out of environment variables, for now. You'll need a
