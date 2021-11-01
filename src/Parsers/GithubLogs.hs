@@ -55,7 +55,10 @@ catErrors (e:es) = case e of
 prettify :: Either String [BuildError] -> String
 prettify = \case
   Left s -> "shit, failed to parse (" ++ s ++ "), try running with --rawlogs"
-  Right errors -> intercalate "\n" $ renderBuildError <$> errors
+  Right errors -> renderDefaultBuildErrors errors
+
+renderDefaultBuildErrors :: [BuildError] -> String
+renderDefaultBuildErrors errors = intercalate "\n" $ renderBuildError <$> errors
 
 renderBuildError :: BuildError -> String
 renderBuildError = \case

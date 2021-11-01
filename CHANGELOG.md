@@ -15,3 +15,8 @@
 ## 0.4.0.0
 
 * parse hspec test failures
+
+## 0.4.1.0
+
+* slightly improved error messages
+* verbosity parameter that isn't being used yet

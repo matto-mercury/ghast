@@ -11,6 +11,7 @@ import Shelly
 import System.Environment
 
 import Args
+import Parsers.GithubLogs (BuildError, renderDefaultBuildErrors)
 
 data StopCondition
   = Expected Text
@@ -31,8 +32,8 @@ data Env = Env
   , gitRemote :: GitRemote -- always from env
   , rawLogs :: Bool -- always from cmd line
   , thisRun :: Maybe Int
+  , renderer :: [BuildError] -> String
   }
-  deriving Show
 
 getCreds :: Env -> (Text, Text)
 getCreds env = (userId env, passwd env)
@@ -82,23 +83,39 @@ readEnvCreds = do
   let eBranch = parseOnly parseBranch branch
   let eRemote = parseOnly parsePushRemote remote
 
-  case (mUserid, mPasswd, eBranch, eRemote) of
-    (Just u, Just p, Right b, Right r) -> pure Env 
+  let creds = (,) <$> mUserid <*> mPasswd
+  let gitEnv = (,) <$> eBranch <*> eRemote
+
+  case (creds, gitEnv) of
+    (Just (u, p), Right (b, r)) -> pure Env 
       { userId = pack u
       , passwd = pack p
       , gitBranch = b
       , gitRemote = r
       , rawLogs = False
       , thisRun = Nothing
+      , renderer = renderDefaultBuildErrors
       }
-    (_, _, _, _) -> error "Invalid creds or git env parse failure"
+    (Nothing, _) -> error "Github creds missing"
+    (_, Left err) -> error $ "Failed to parse environment: " ++ err
 
 fillArgs :: Args -> Env -> Env
 fillArgs Args {..} env =
-  -- this pattern is obviously not going to scale
-  case (branch, rawlogs, thisrun) of
-    (Just b, rl, tr) -> env { gitBranch = b, rawLogs = rl, thisRun = tr }
-    (Nothing, rl, tr) -> env { rawLogs = rl, thisRun = tr }
+  env 
+    { rawLogs = rawlogs
+    , thisRun = thisrun
+    , gitBranch =
+      case branch of
+        Nothing -> gitBranch env
+        Just b -> b
+    , renderer =
+      case verbosity of
+        Nothing -> renderer env
+        Just v -> pickRenderer v
+    }
+
+pickRenderer :: RenderVerbosity -> [BuildError] -> String
+pickRenderer _ = renderDefaultBuildErrors
 
 -- this is IO () so showStop can typecheck with putStrLn, which is IO ()
 -- it's a bit of a hack but will do for now
@@ -136,6 +153,7 @@ readTestCreds = do
       , gitRemote = testRemote
       , rawLogs = False
       , thisRun = Nothing
+      , renderer = renderDefaultBuildErrors
       }
 
 testRemote :: GitRemote
