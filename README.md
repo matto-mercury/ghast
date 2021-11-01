@@ -67,23 +67,14 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 
 ### Latest hits
 
-- pull repository info
-  - owner (e.g. MercuryTechnologies)
-  - repo (e.g. mercury-web-backend)
-  - current branch (e.g. matto/rul-79)
-- get latest run, jobs in current branch
-- list failed jobs
-- download logs from failed jobs
-- command-line options
-  - check a specified branch
 - check a specified run / job
 - parse ghc errors out of logs
+- parse test failures and fix-migrations issues
+- better startup error handling
 
 ### Next features
 - parse more errors out of logs
-  - test failures
-    - try to find a prefix match for "To rerun use: " --match flags
-  - "fix your migrations"
+  - try to find a prefix match for "To rerun use: " --match flags
   - golden types don't match
   - ...?
 - different verbosity levels

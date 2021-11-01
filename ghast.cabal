@@ -30,6 +30,7 @@ library
       , DerivingStrategies
       , FlexibleInstances
       , GeneralizedNewtypeDeriving
+      , LambdaCase
       , NamedFieldPuns
       , OverloadedStrings
       , RecordWildCards

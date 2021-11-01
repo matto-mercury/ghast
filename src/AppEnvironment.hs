@@ -12,6 +12,7 @@ import System.Environment
 
 import Args
 import Parsers.GithubLogs (BuildError, renderDefaultBuildErrors)
+import Shared (maybeToEither)
 
 data StopCondition
   = Expected Text
@@ -75,29 +76,27 @@ readEnvCreds = do
   mUserid <- getEnvironmentUserid
   mPasswd <- getEnvironmentPassword
 
-  (branch, remote) <- shelly $ silently $ do
+  (branchStr, remoteStr) <- shelly $ silently $ do
     b <- run "git" ["symbolic-ref", "--quiet", "HEAD"]
     r <- findPushRemote <$> run "git" ["remote", "-v"]
     pure (b, r)
 
-  let eBranch = parseOnly parseBranch branch
-  let eRemote = parseOnly parsePushRemote remote
+  pure $ either error id $ do
+    userid <- maybeToEither "$GITHUB_USER not found" mUserid
+    passwd <- maybeToEither "$GITHUB_KEY not found"  mPasswd
 
-  let creds = (,) <$> mUserid <*> mPasswd
-  let gitEnv = (,) <$> eBranch <*> eRemote
+    branch <- parseOnly parseBranch branchStr
+    remote <- parseOnly parsePushRemote remoteStr
 
-  case (creds, gitEnv) of
-    (Just (u, p), Right (b, r)) -> pure Env 
-      { userId = pack u
-      , passwd = pack p
-      , gitBranch = b
-      , gitRemote = r
+    pure Env
+      { userId = pack userid
+      , passwd = pack passwd
+      , gitBranch = branch
+      , gitRemote = remote
       , rawLogs = False
       , thisRun = Nothing
       , renderer = renderDefaultBuildErrors
       }
-    (Nothing, _) -> error "Github creds missing"
-    (_, Left err) -> error $ "Failed to parse environment: " ++ err
 
 fillArgs :: Args -> Env -> Env
 fillArgs Args {..} env =

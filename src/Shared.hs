@@ -13,3 +13,9 @@ aesonOptions ms = defaultOptions { fieldLabelModifier = snakeCase . drop len }
 
 tshow :: Show a => a -> Text
 tshow = pack . show
+
+-- this comes in a lot of modules but I feel like importing one is overkill?
+maybeToEither :: a -> Maybe b -> Either a b
+maybeToEither foo = \case
+  Nothing -> Left foo
+  Just bar -> Right bar
