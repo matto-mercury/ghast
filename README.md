@@ -87,6 +87,8 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 
 ### Medium term
 - figure out how to work nicely with datetimes, if needed
+ - it would be handy to have a "how long has this been running?" piece
+   for in-progress runs and "how long it took" info for completed runs
 
 ### Longer term
 - oauth2 support
