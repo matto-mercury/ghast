@@ -17,6 +17,8 @@ import qualified Data.List.NonEmpty as NEL
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
+import Data.Time.Clock
+import Data.Time.Format
 import GHC.Generics
 import Network.HTTP.Simple
 
@@ -46,6 +48,10 @@ destructureResponse accessor resp = do
     s | s < 500 -> throwError $ Surprise $ "Some other bad request: " <> tshow s
     s -> throwError $ Surprise $ "Their problem: " <> tshow s
 
+renderHumanTime :: NominalDiffTime -> Text
+renderHumanTime t =
+  pack $ formatTime defaultTimeLocale "%mmin %Ssec" t
+
 listRuns :: (MonadThrow m, MonadIO m) => 
   Int -> Text -> AppT m (NonEmpty CommitRunProj)
 listRuns page br = do
@@ -60,13 +66,20 @@ listRuns page br = do
 failedLatest :: (MonadThrow m, MonadIO m) =>
   NonEmpty CommitRunProj -> AppT m CompletedRun
 failedLatest runs = do
+  now <- asks utcNow
   let latest = NEL.head runs
   completedLatest <- case completedRunFrom latest of
     Right run -> pure run 
-    Left status -> throwError $ Expected $ "Job status: " <> tshow status
+    Left status -> throwError . Expected $ "Job status: " <> tshow status <> renderRunTime now latest
   if conclusion completedLatest == GR.Success
-  then throwError $ Expected "Job succeeded"
+  then throwError . Expected $ "Job succeeded" <> renderRunTime now latest
   else pure completedLatest
+
+renderRunTime :: UTCTime -> CommitRunProj -> Text
+renderRunTime now CommitRunProj {..} =
+  case crpStatus of
+    GR.Completed -> " (took " <> renderHumanTime (diffUTCTime crpUpdatedAt crpCreatedAt) <> ")"
+    _ -> " (" <> renderHumanTime (diffUTCTime now crpCreatedAt) <> " so far)"
 
 latestFailedRun :: (MonadThrow m, MonadIO m) => AppT m CompletedRun
 latestFailedRun = do
@@ -117,11 +130,12 @@ doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
   banner <- repoConfigMessage
   liftIO $ putStrLn banner
+  now <- asks utcNow
 
   run <- getInterestingRun
   jobs <- failedJobs =<< listJobs run
 
-  liftIO . putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage <$> jobs
+  liftIO . putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage now <$> jobs
   liftIO $ putStrLn "\nDetails:\n"
 
   rawLogsText <- rawLogsFor (NEL.head jobs)
@@ -161,12 +175,18 @@ runTargetString = do
     (br, Nothing) -> "branch: " ++ unpack br
     (_, Just run) -> "run ID: " ++ show run
 
-failedJobMessage :: FailedJob -> String
-failedJobMessage FailedJob {..} =
+failedJobMessage :: UTCTime -> FailedJob -> String
+failedJobMessage now FailedJob {..} =
   let jobStepStatus :: JobStep -> String
-      jobStepStatus j = unpack (jsName j) ++ ": " ++ show (jsConclusion j)
+      jobStepStatus j = unpack (jsName j) ++ ": " ++ show (jsConclusion j) ++ renderJobStepTime now j
       jobStepStatuses = intercalate "\n  " $ jobStepStatus <$> fjSteps
    in unpack fjName ++ ": " ++ show fjConclusion ++ "\n  " ++ jobStepStatuses
+
+renderJobStepTime :: UTCTime -> JobStep -> String
+renderJobStepTime now JobStep {..} =
+  case jsStatus of
+    GJ.Completed -> " (took " ++ show (diffUTCTime jsCompletedAt jsStartedAt) ++ ")"
+    _ -> " (" ++ show (diffUTCTime now jsStartedAt) ++ " so far)"
 
 -- for testing parsers
 

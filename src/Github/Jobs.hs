@@ -5,6 +5,7 @@ import Control.Monad.Reader
 import qualified Data.Aeson as JS
 import Data.Aeson.Casing (snakeCase)
 import Data.Text
+import Data.Time.Clock
 import GHC.Generics
 import Network.HTTP.Simple
 
@@ -28,8 +29,8 @@ data JobsProj = JobsProj
   , jpRunId :: Int
   , jpStatus :: JobStatus
   , jpConclusion :: JobConclusion
-  , jpStartedAt :: Text
-  , jpCompletedAt :: Text
+  , jpStartedAt :: UTCTime
+  , jpCompletedAt :: UTCTime
   , jpName :: Text
   , jpSteps :: [JobStep]
   }
@@ -43,8 +44,8 @@ data JobStep = JobStep
   , jsStatus :: JobStatus
   , jsConclusion :: JobConclusion
   , jsNumber :: Int
-  , jsStartedAt :: Text
-  , jsCompletedAt :: Text
+  , jsStartedAt :: UTCTime
+  , jsCompletedAt :: UTCTime
   }
   deriving stock (Generic, Show, Eq)
 
@@ -85,8 +86,8 @@ data FailedJob = FailedJob
   { fjId :: Int
   , fjName :: Text
   , fjConclusion :: JobConclusion
-  , fjStartedAt :: Text
-  , fjCompletedAt :: Text
+  , fjStartedAt :: UTCTime
+  , fjCompletedAt :: UTCTime
   , fjSteps :: [JobStep]
   }
   deriving stock (Generic, Show, Eq)

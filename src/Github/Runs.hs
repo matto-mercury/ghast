@@ -5,6 +5,7 @@ import Control.Monad.Reader
 import Data.Aeson
 import Data.Aeson.Casing (snakeCase)
 import Data.Text
+import Data.Time.Clock
 import GHC.Generics
 import Network.HTTP.Simple
 
@@ -74,8 +75,13 @@ data CommitRunProj = CommitRunProj
   , crpStatus :: RunStatus
   , crpConclusion :: Maybe RunConclusion -- got "("conclusion",Null)" back as a parse result
   , crpJobsUrl :: Text
+  , crpCreatedAt :: UTCTime
+  , crpUpdatedAt :: UTCTime
   }
   deriving stock (Generic, Show, Eq)
+
+instance FromJSON CommitRunProj where
+  parseJSON = genericParseJSON $ aesonOptions $ Just "crp"
 
 githubGetRun :: Int -> GitRemote -> Text
 githubGetRun runId GitRemote {..} = 
@@ -110,9 +116,6 @@ completedRunFrom CommitRunProj {..} =
     (Completed, Just c) -> Right CompletedRun 
       { runId = crpId, conclusion = c, jobsUrl = crpJobsUrl }
     (_, _) -> Left crpStatus
-
-instance FromJSON CommitRunProj where
-  parseJSON = genericParseJSON $ aesonOptions $ Just "crp"
 
 buildRunJobsRequest :: MonadThrow m => CompletedRun -> [Parameter] -> AppT m (TypedRequest ListJobs)
 buildRunJobsRequest CompletedRun {jobsUrl} params = do -- NamedFieldPuns instead of {..}

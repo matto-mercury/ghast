@@ -71,6 +71,7 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 - parse ghc errors out of logs
 - parse test failures and fix-migrations issues
 - better startup error handling
+- UTCTime processing, renders time-taken/elapsed-time
 
 ### Next features
 - parse more errors out of logs
@@ -86,9 +87,8 @@ Actions web UI, or with `gh run list` (and friends) from the CLI if you have the
 - parsers could use names to improve attoparsec errors
 
 ### Medium term
-- figure out how to work nicely with datetimes, if needed
- - it would be handy to have a "how long has this been running?" piece
-   for in-progress runs and "how long it took" info for completed runs
+- start in background mode as git hook, periodically check job status, print
+ neat little message when complete (low verbosity)
 
 ### Longer term
 - oauth2 support

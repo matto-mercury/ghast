@@ -6,6 +6,7 @@ import Control.Monad.Reader
 import Data.Attoparsec.Text
 import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import qualified Data.Text as T (lines) 
+import Data.Time.Clock (UTCTime (..), getCurrentTime)
 import Options.Generic
 import Shelly
 import System.Environment
@@ -34,6 +35,7 @@ data Env = Env
   , rawLogs :: Bool -- always from cmd line
   , thisRun :: Maybe Int
   , renderer :: [BuildError] -> String
+  , utcNow :: UTCTime -- at startup, because why not
   }
 
 getCreds :: Env -> (Text, Text)
@@ -71,10 +73,11 @@ parsePushRemote = do
 parseBranch :: Parser Text
 parseBranch = "refs/heads/" *> takeText
 
-readEnvCreds :: IO Env
-readEnvCreds = do
+readEnv :: IO Env
+readEnv = do
   mUserid <- getEnvironmentUserid
   mPasswd <- getEnvironmentPassword
+  utcNow <- getCurrentTime
 
   (branchStr, remoteStr) <- shelly $ silently $ do
     b <- run "git" ["symbolic-ref", "--quiet", "HEAD"]
@@ -96,6 +99,7 @@ readEnvCreds = do
       , rawLogs = False
       , thisRun = Nothing
       , renderer = renderDefaultBuildErrors
+      , utcNow = utcNow
       }
 
 fillArgs :: Args -> Env -> Env
@@ -121,7 +125,7 @@ pickRenderer _ = renderDefaultBuildErrors
 runAppEnv :: AppT IO () -> IO ()
 runAppEnv app = do
   args <- getRecord "ghast"
-  env <- readEnvCreds
+  env <- readEnv
   eResult <- runExceptT $ runReaderT (runAppT app) $ fillArgs args env
   case eResult of
     Left x -> showStop x
@@ -143,6 +147,7 @@ readTestCreds :: IO Env
 readTestCreds = do
   mUserid <- getEnvironmentUserid
   mPasswd <- getEnvironmentPassword
+  utcNow <- getCurrentTime
 
   case (mUserid, mPasswd) of
     (Just u, Just p) -> pure Env
@@ -153,6 +158,7 @@ readTestCreds = do
       , rawLogs = False
       , thisRun = Nothing
       , renderer = renderDefaultBuildErrors
+      , utcNow = utcNow
       }
 
 testRemote :: GitRemote
