@@ -7,7 +7,9 @@ import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
 import qualified Data.List as L (intercalate)
 import Data.Maybe (catMaybes)
-import Data.Text (Text, unpack)
+import Data.Text (unpack)
+
+import LocalPrelude
 
 import Parsers.DateTime
 import Parsers.Filepath

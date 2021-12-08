@@ -10,7 +10,9 @@ import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
 import Data.List (intercalate)
 import Data.Maybe (catMaybes)
-import Data.Text (Text, unpack)
+import Data.Text (unpack)
+
+import LocalPrelude
 
 import Parsers.Filepath
 import Parsers.GhcErrors

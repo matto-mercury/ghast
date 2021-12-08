@@ -14,7 +14,6 @@ import Data.Functor
 import Data.List (intercalate)
 import Data.List.NonEmpty (NonEmpty (..), toList)
 import qualified Data.List.NonEmpty as NEL
-import Data.Text (Text(..), pack, unpack, isSuffixOf)
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 import Data.Time.Clock
@@ -27,6 +26,7 @@ import AppEnvironment
 import Github
 import Github.Jobs as GJ
 import Github.Runs as GR
+import LocalPrelude
 import Parsers.DateTime
 import Parsers.Filepath
 import Parsers.GhcErrors
@@ -50,7 +50,7 @@ destructureResponse accessor resp = do
 
 renderHumanTime :: NominalDiffTime -> Text
 renderHumanTime t =
-  pack $ formatTime defaultTimeLocale "%mmin %Ssec" t
+  T.pack $ formatTime defaultTimeLocale "%mmin %Ssec" t
 
 listRuns :: (MonadThrow m, MonadIO m) => 
   Int -> Text -> AppT m (NonEmpty CommitRunProj)
@@ -129,32 +129,32 @@ rawLogsFor job = do
 doWorkSon :: (MonadThrow m, MonadIO m) => AppT m ()
 doWorkSon = do
   banner <- repoConfigMessage
-  liftIO $ putStrLn banner
+  putStrLn banner
   now <- asks utcNow
 
   run <- getInterestingRun
   jobs <- failedJobs =<< listJobs run
 
-  liftIO . putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage now <$> jobs
-  liftIO $ putStrLn "\nDetails:\n"
+  putStrLn $ intercalate "\n\n" $ toList $ failedJobMessage now <$> jobs
+  putStrLn "\nDetails:\n"
 
   rawLogsText <- rawLogsFor (NEL.head jobs)
 
   showRawLogs <- asks rawLogs
 
   if showRawLogs then
-    liftIO . putStrLn $ unpack rawLogsText
+    putStrLn $ T.unpack rawLogsText
   else
-    liftIO . putStrLn . prettify $ parseGithubJobLogs rawLogsText
+    putStrLn . prettify $ parseGithubJobLogs rawLogsText
 
   let runIdStr = show $ runId run -- why I can't inline this is beyond me
-  liftIO . putStrLn $ "\nRunID: " ++ runIdStr
+  putStrLn $ "\nRunID: " ++ runIdStr
 
 repoConfigMessage :: (MonadThrow m, MonadIO m) => AppT m String 
 repoConfigMessage = do
   remote <- asks gitRemote
 
-  let remoteStr = unpack $ mconcat
+  let remoteStr = T.unpack $ mconcat
         [ "remote: "
         , owner remote
         , "/"
@@ -172,15 +172,15 @@ runTargetString = do
   run <- asks thisRun
 
   pure $ case (branch, run) of
-    (br, Nothing) -> "branch: " ++ unpack br
+    (br, Nothing) -> "branch: " ++ T.unpack br
     (_, Just run) -> "run ID: " ++ show run
 
 failedJobMessage :: UTCTime -> FailedJob -> String
 failedJobMessage now FailedJob {..} =
   let jobStepStatus :: JobStep -> String
-      jobStepStatus j = unpack (jsName j) ++ ": " ++ show (jsConclusion j) ++ renderJobStepTime now j
+      jobStepStatus j = T.unpack (jsName j) ++ ": " ++ show (jsConclusion j) ++ renderJobStepTime now j
       jobStepStatuses = intercalate "\n  " $ jobStepStatus <$> fjSteps
-   in unpack fjName ++ ": " ++ show fjConclusion ++ "\n  " ++ jobStepStatuses
+   in T.unpack fjName ++ ": " ++ show fjConclusion ++ "\n  " ++ jobStepStatuses
 
 renderJobStepTime :: UTCTime -> JobStep -> String
 renderJobStepTime now JobStep {..} =

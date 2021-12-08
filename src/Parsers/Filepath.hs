@@ -7,6 +7,8 @@ import Data.Char (isAlpha)
 import qualified Data.List as L (intercalate)
 import Data.Text (Text, unpack)
 
+import LocalPrelude
+
 -- ghc compiler messages begin with a filepath that looks like
 --  list/of/directories/sourcefile.hs:line:col
 -- it is just as easy to parse these structured as not, or pretty close, so

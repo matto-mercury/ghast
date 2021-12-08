@@ -4,16 +4,17 @@ import Control.Monad.Catch
 import Control.Monad.Except
 import Control.Monad.Reader
 import Data.Attoparsec.Text
-import Data.Text (Text(..), pack, unpack, isSuffixOf)
+import Data.Text (pack, unpack, isSuffixOf)
 import qualified Data.Text as T (lines) 
 import Data.Time.Clock (UTCTime (..), getCurrentTime)
 import Options.Generic
 import Shelly
 import System.Environment
 
+import LocalPrelude
+
 import Args
 import Parsers.GithubLogs (BuildError, renderDefaultBuildErrors)
-import Shared (maybeToEither)
 
 data StopCondition
   = Expected Text

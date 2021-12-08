@@ -5,9 +5,10 @@ import Control.Monad.Reader
 import Data.Aeson
 import Data.ByteString.Base64 as B64
 import qualified Data.ByteString.Char8 as B8
-import Data.Text
 import Data.Text.Encoding (encodeUtf8)
 import Network.HTTP.Simple
+
+import LocalPrelude
 
 import AppEnvironment
 import UriFragment

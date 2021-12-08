@@ -30,8 +30,10 @@ library
       , DerivingStrategies
       , FlexibleInstances
       , GeneralizedNewtypeDeriving
+      , ImportQualifiedPost
       , LambdaCase
       , NamedFieldPuns
+      , NoImplicitPrelude
       , OverloadedStrings
       , RecordWildCards
       , TypeApplications
@@ -42,6 +44,7 @@ library
       , Github
       , Github.Jobs
       , Github.Runs
+      , LocalPrelude
       , Parsers.DateTime
       , Parsers.Filepath
       , Parsers.GhcErrors

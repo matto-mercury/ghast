@@ -1,7 +1,8 @@
 module Args where
 
-import Data.Text
 import Options.Generic
+
+import LocalPrelude
 
 data RenderVerbosity = RenderQuiet | RenderTerse | RenderNormal | RenderVerbose
   deriving (Generic, Show, Read)

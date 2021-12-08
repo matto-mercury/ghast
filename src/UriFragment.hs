@@ -1,7 +1,9 @@
 module UriFragment where
 
-import Data.Text (Text (..), intercalate, pack)
+import Data.Text (intercalate, pack)
 import qualified Network.URI.Encode as UE
+
+import LocalPrelude
 
 data Parameter = Param Text Text
   deriving stock (Show, Eq)

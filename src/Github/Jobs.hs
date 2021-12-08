@@ -4,10 +4,12 @@ import Control.Monad.Catch
 import Control.Monad.Reader
 import qualified Data.Aeson as JS
 import Data.Aeson.Casing (snakeCase)
-import Data.Text
+import Data.Text (pack)
 import Data.Time.Clock
 import GHC.Generics
 import Network.HTTP.Simple
+
+import LocalPrelude
 
 import AppEnvironment
 import Github

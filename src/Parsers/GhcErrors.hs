@@ -7,6 +7,8 @@ import qualified Data.Attoparsec.Text as P
 import Data.Char (isAlpha)
 import Data.Text (Text)
 
+import LocalPrelude
+
 import Parsers.DateTime
 import Parsers.Filepath
 

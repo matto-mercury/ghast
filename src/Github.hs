@@ -3,9 +3,11 @@ module Github where
 import Control.Monad.Catch
 import Control.Monad.Reader
 import Data.Aeson
-import Data.Text
+import Data.Text (unpack)
 import Network.HTTP.Simple
 import GHC.Generics
+
+import LocalPrelude
 
 import AppEnvironment
 import Request

@@ -5,6 +5,8 @@ import Data.Attoparsec.Text
 import Data.Attoparsec.Combinator (option)
 import Data.Text (Text)
 
+import LocalPrelude
+
 -- We don't actually care (yet?) about DateTimes in ghast, but the build logs
 -- all start with one. So a datetime parser serves two purposes:
 -- - it matches the start of a line, more or less
