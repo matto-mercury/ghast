@@ -35,6 +35,7 @@ data Env = Env
   , gitRemote :: GitRemote -- always from env
   , rawLogs :: Bool -- always from cmd line
   , thisRun :: Maybe Int
+  , runName :: Text
   , renderer :: [BuildError] -> String
   , utcNow :: UTCTime -- at startup, because why not
   }
@@ -99,6 +100,7 @@ readEnv = do
       , gitRemote = remote
       , rawLogs = False
       , thisRun = Nothing
+      , runName = "mwb CI"
       , renderer = renderDefaultBuildErrors
       , utcNow = utcNow
       }
@@ -108,6 +110,10 @@ fillArgs Args {..} env =
   env 
     { rawLogs = rawlogs
     , thisRun = thisrun
+    , runName =
+      case runname of
+        Nothing -> runName env
+        Just n -> n
     , gitBranch =
       case branch of
         Nothing -> gitBranch env
@@ -131,9 +137,6 @@ runAppEnv app = do
   case eResult of
     Left x -> showStop x
     Right v -> pure v
-  -- case app of
-  --   AppT a -> case a of
-  --     ReaderT ema -> ema env
 
 showStop :: StopCondition -> IO () 
 showStop stop = do
@@ -154,10 +157,11 @@ readTestCreds = do
     (Just u, Just p) -> pure Env
       { userId = pack u
       , passwd = pack p
-      , gitBranch = "matto/rul-88"
+      , gitBranch = "matto/memo-search-proximity"
       , gitRemote = testRemote
       , rawLogs = False
       , thisRun = Nothing
+      , runName = "mwb CI"
       , renderer = renderDefaultBuildErrors
       , utcNow = utcNow
       }

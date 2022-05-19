@@ -74,6 +74,7 @@ instance FromJSON RunConclusion where
 data CommitRunProj = CommitRunProj
   { crpId :: Int
   , crpHeadBranch :: Text
+  , crpName :: Text
   , crpStatus :: RunStatus
   , crpConclusion :: Maybe RunConclusion -- got "("conclusion",Null)" back as a parse result
   , crpJobsUrl :: Text

@@ -48,6 +48,11 @@ starting with `ccccc` and helpfully tell you that there's no GHA runs for it.
 If you want to get the raw, unparsed logs for a failed run, use `--rawlogs`.
 Probably pipe the output to a file if you do.
 
+#### `--runname` specifies a particular build step by name
+
+By default this is `mwb CI`, but if you want to get statuses for a different PR
+step go ahead. `ghast` will pick the most recent job of that name,
+
 #### `--thisrun` selects a specific Github Actions run
 
 `ghast` normally pulls down info for the most recent Github Actions run on the

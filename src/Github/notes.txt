@@ -22,3 +22,23 @@ jobs <- runFwk $ listJobs lFail
 failedJobs <- runFwk $ failedJobs jobs
 let first = NEL.head failedJobs
 rawLogs <- runFwk $ rawLogsFor first
+
+-- multi-run stuff
+runs <- runFwk $ listRuns 20 "matto/memo-search-proximity" -- has length 9
+crpName <$> runs
+"mwb CI" :| ["PR Comment with Diff Stat","PR Branch Labeler","mwb CI","PR Comment with Diff Stat","PR Branch Labeler","mwb CI","PR Comment with Diff Stat","PR Branch Labeler"]
+
+(\x -> (crpName x, crpCreatedAt x, crpUpdatedAt x)) <$> runs
+("mwb CI",                      2022-05-19 00:39:49 UTC,2022-05-19 01:02:09 UTC)
+("PR Comment with Diff Stat",   2022-05-19 00:39:49 UTC,2022-05-19 00:40:00 UTC)
+("PR Branch Labeler",           2022-05-19 00:39:49 UTC,2022-05-19 00:39:56 UTC)
+("mwb CI",                      2022-05-19 00:02:02 UTC,2022-05-19 00:24:25 UTC)
+("PR Comment with Diff Stat",   2022-05-19 00:02:02 UTC,2022-05-19 00:02:17 UTC)
+("PR Branch Labeler",           2022-05-19 00:02:02 UTC,2022-05-19 00:02:10 UTC)
+("mwb CI",                      2022-05-18 23:23:30 UTC,2022-05-18 23:55:35 UTC)
+("PR Comment with Diff Stat",   2022-05-18 23:23:30 UTC,2022-05-18 23:23:43 UTC)
+("PR Branch Labeler",           2022-05-18 23:23:30 UTC,2022-05-18 23:23:40 UTC)
+
+okay, so clearly I need to filter on "mwb CI"
+
+compRuns = rights . toList $ completedRunFrom <$> runs

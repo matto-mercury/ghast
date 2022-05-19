@@ -52,14 +52,19 @@ renderHumanTime :: NominalDiffTime -> Text
 renderHumanTime t =
   T.pack $ formatTime defaultTimeLocale "%mmin %Ssec" t
 
+filterByName :: Text -> [CommitRunProj] ->  [CommitRunProj]
+filterByName name = filter (\crp -> crpName crp == name)
+
 listRuns :: (MonadThrow m, MonadIO m) => 
   Int -> Text -> AppT m (NonEmpty CommitRunProj)
-listRuns page br = do
-  runResp <- runTypedRequestM $ buildListRunsReq [perPage page, Github.branch br]
+listRuns pageSize branch = do
+  name <- asks runName
+  runResp <- runTypedRequestM $ buildListRunsReq [perPage pageSize, Github.branch branch]
   -- using >>= instead of <&> because the [] case is doing an unrelated but
   -- monadic operation (throwError); if the case statement was pure we could
   -- just drop the `pure` in x:xs and fmap
-  destructureResponse lrWorkflowRuns runResp >>= \case 
+  runs <- destructureResponse lrWorkflowRuns runResp
+  case filterByName name runs of
     [] -> throwError $ Expected "No GHA runs for current remote and branch"
     x:xs -> pure $ x :| xs
 
@@ -84,7 +89,7 @@ renderRunTime now CommitRunProj {..} =
 latestFailedRun :: (MonadThrow m, MonadIO m) => AppT m CompletedRun
 latestFailedRun = do
   br <- asks gitBranch
-  listRuns 1 br >>= failedLatest
+  listRuns 5 br >>= failedLatest
 
 specificRun :: (MonadThrow m, MonadIO m) =>
   Int -> AppT m CompletedRun

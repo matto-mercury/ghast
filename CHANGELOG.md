@@ -20,3 +20,11 @@
 
 * slightly improved error messages
 * verbosity parameter that isn't being used yet
+
+## 0.4.2.0
+
+* local prelude, no new features
+
+## 0.5.0.0
+
+* look for the latest job matching a given name, defaults to "mwb CI"

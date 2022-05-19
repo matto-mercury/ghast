@@ -12,6 +12,7 @@ instance ParseField RenderVerbosity
 -- todo: help text
 data Args = Args 
   { branch :: Maybe Text
+  , runname :: Maybe Text
   , rawlogs :: Bool
   , thisrun :: Maybe Int
   , verbosity :: Maybe RenderVerbosity
